@@ -9,6 +9,11 @@ import { api } from "@/lib/api";
 import loginVideo from "@/assets/login.mp4";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      redirect: (search.redirect as string) || "",
+    };
+  },
   head: () => ({ meta: [{ title: "Login — BHOI" }] }),
   component: App,
 });
@@ -31,6 +36,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
 
 function App() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const { loginWithApi } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -75,7 +81,11 @@ function App() {
       const u = await loginWithApi(email, password);
       toast.success("Success! Welcome back to BHOI.");
       setTimeout(() => {
-        navigate({ to: dashHomeFor(u.role) });
+        if (search?.redirect) {
+          navigate({ to: search.redirect });
+        } else {
+          navigate({ to: dashHomeFor(u.role) });
+        }
       }, 800);
     } catch (err: any) {
       const errMsg = err.message || "";

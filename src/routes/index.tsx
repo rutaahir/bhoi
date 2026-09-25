@@ -1098,21 +1098,34 @@ function DashboardStyleHome() {
               </span>
             </button>
 
-            {/* Auth buttons */}
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Link
-                to="/login"
-                className="px-2 xs:px-2.5 sm:px-3 py-1 rounded-lg bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white text-[9.5px] xs:text-[10px] sm:text-xs font-bold hover:shadow-sm transition whitespace-nowrap active:scale-95 flex-shrink-0"
-              >
-                Login
-              </Link>
-              <Link
-                to="/register"
-                className="hidden md:inline-flex px-2.5 sm:px-3 py-1 rounded-lg border border-[#F97316] text-[#F97316] text-[10px] sm:text-xs font-bold hover:bg-[#F97316]/10 transition whitespace-nowrap flex-shrink-0"
-              >
-                Register
-              </Link>
-            </div>
+            {/* Auth status / Dashboard button */}
+            {user ? (
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Link
+                  to={dashHomeFor(user.role)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white text-[11px] sm:text-xs font-bold shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-95 transition cursor-pointer"
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>My Dashboard</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Link
+                  to="/login"
+                  search={{ redirect: "/?page=communities" }}
+                  className="px-2 xs:px-2.5 sm:px-3 py-1 rounded-lg bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white text-[9.5px] xs:text-[10px] sm:text-xs font-bold hover:shadow-sm transition whitespace-nowrap active:scale-95 flex-shrink-0"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="hidden md:inline-flex px-2.5 sm:px-3 py-1 rounded-lg border border-[#F97316] text-[#F97316] text-[10px] sm:text-xs font-bold hover:bg-[#F97316]/10 transition whitespace-nowrap flex-shrink-0"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
         </header>
 
@@ -1626,56 +1639,19 @@ function DashboardStyleHome() {
                         Discover, join, and collaborate with regional Samaj communities & local chapters.
                       </p>
                     </div>
-                    <button
-                      onClick={() => setShowRegisterCommunity(true)}
-                      className="px-5 py-2.5 text-xs bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95 transition cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4 stroke-[3]" /> Register Community
-                    </button>
                   </div>
 
-                  {/* Filter & Search Bar */}
-                  <div className="bg-white border border-[#EBE3DB] rounded-3xl p-5 shadow-sm space-y-4">
-                    <div className="flex flex-col md:flex-row gap-3">
-                      <div className="relative flex-1">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C6D58]" />
-                        <input
-                          type="text"
-                          value={communitySearch}
-                          onChange={(e) => setCommunitySearch(e.target.value)}
-                          placeholder="Search community by name, district, village, or state..."
-                          className="w-full pl-11 pr-4 py-3 rounded-2xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316] text-xs font-semibold text-[#3E2723] transition"
-                        />
-                      </div>
-                      <select
-                        value={communityTypeFilter}
-                        onChange={(e) => setCommunityTypeFilter(e.target.value)}
-                        className="px-4 py-3 rounded-2xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316] text-xs font-bold text-[#5C4033] cursor-pointer"
-                      >
-                        <option value="All">All Types (Super & Subsidiary)</option>
-                        <option value="Super">Super Community (Apex)</option>
-                        <option value="Subsidiary">Subsidiary (Local Chapter)</option>
-                      </select>
-                    </div>
-
-                    {/* Quick Filters */}
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
-                      <span className="text-[11px] font-bold text-warm-muted uppercase tracking-wider flex items-center gap-1 mr-1">
-                        <Filter className="w-3 h-3 text-[#F97316]" /> Type:
-                      </span>
-                      {["All", "Super", "Subsidiary"].map(tType => (
-                        <button
-                          key={tType}
-                          onClick={() => setCommunityTypeFilter(tType)}
-                          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                            communityTypeFilter === tType
-                              ? "bg-[#F97316] text-white shadow-xs"
-                              : "bg-[#FFF8F2] text-[#5C4033] border border-[#EBE3DB] hover:bg-[#FDF2E9]"
-                          }`}
-                        >
-                          {tType === "All" ? "All Communities" : tType}
-                        </button>
-                      ))}
+                  {/* Search Bar */}
+                  <div className="bg-white border border-[#EBE3DB] rounded-3xl p-5 shadow-sm">
+                    <div className="relative w-full">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C6D58]" />
+                      <input
+                        type="text"
+                        value={communitySearch}
+                        onChange={(e) => setCommunitySearch(e.target.value)}
+                        placeholder="Search community by name, district, village, or state..."
+                        className="w-full pl-11 pr-4 py-3 rounded-2xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316] text-xs font-semibold text-[#3E2723] transition"
+                      />
                     </div>
                   </div>
 
@@ -2847,7 +2823,7 @@ function DashboardStyleHome() {
               <button
                 onClick={() => {
                   setShowLoginPromptModal(false);
-                  navigate({ to: "/login" });
+                  navigate({ to: "/login", search: { redirect: "/?page=communities" } });
                 }}
                 className="flex-1 py-2.5 bg-[#F97316] text-white font-bold text-xs rounded-xl hover:bg-[#EA580C] shadow-md transition cursor-pointer"
               >
