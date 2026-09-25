@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Newspaper, Image as ImageIcon, Video, Network, Settings,
   Search, Bell, Globe, ChevronDown, Plus, Play, User, X, Mail, Phone, Home as HomeIcon,
   ChevronLeft, ChevronRight,
-  ShieldCheck, ArrowUpRight, Loader, IndianRupee, Clock, Filter, Tag, ExternalLink, Share2, Loader2
+  ShieldCheck, ArrowUpRight, Loader, IndianRupee, Clock, Filter, Tag, ExternalLink, Share2, Loader2, Eye, Trash2
 } from "lucide-react";
 import { COMMUNITIES, EVENTS, MATRIMONY, BUSINESSES, JOBS, NEWS } from "@/data/mock";
 import { api, getImageUrl, MOCK_GALLERY, MOCK_VIDEOS, MOCK_DOCUMENTS } from "@/lib/api";
