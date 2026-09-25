@@ -88,6 +88,10 @@ function RootComponent() {
       const unlocked = localStorage.getItem("site_access_unlocked") === "true" || sessionStorage.getItem("site_access_unlocked") === "true";
       if (!unlocked) {
         setIsUnlocked(false);
+        // Direct redirect to register page on initial link open (root path)
+        if (window.location.pathname === "/" && !window.location.search.includes("page=")) {
+          window.location.replace("/register");
+        }
       }
     }
   }, []);

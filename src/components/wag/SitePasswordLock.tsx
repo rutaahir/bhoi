@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowRight, AlertCircle, Sparkles, CheckCircle2, UserPlus, ChevronRight } from "lucide-react";
+import bhoiLogo from "@/assets/Bhoi.png";
 
 interface SitePasswordLockProps {
   onUnlock: () => void;
@@ -82,24 +83,13 @@ export function SitePasswordLock({ onUnlock }: SitePasswordLockProps) {
               <span>Protected Portal Access</span>
             </div>
 
-            {/* Glowing Logo Icon */}
-            <div className="relative mx-auto w-20 h-20 mb-5 flex items-center justify-center">
-              <div className="absolute inset-0 bg-gradient-to-tr from-[#F97316] to-[#EA580C] rounded-2xl rotate-6 blur-md opacity-70 animate-pulse" />
-              <div className="relative w-20 h-20 bg-gradient-to-tr from-[#F97316] to-[#EA580C] rounded-2xl flex items-center justify-center shadow-xl border border-white/20">
-                <svg width="42" height="42" viewBox="0 0 40 40" className="drop-shadow-md">
-                  <path d="M20 3 L34 9 V21 C34 29 27 35 20 37 C13 35 6 29 6 21 V9 Z" fill="#FFF5EE" />
-                  <path d="M14 19 L18 23 L26 14" fill="none" stroke="#F97316" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
+            {/* Brand Logo & Tagline */}
+            <div className="mx-auto mb-6 flex flex-col items-center justify-center gap-1 group">
+              <img src={bhoiLogo} alt="BHOI Logo" className="h-16 w-auto object-contain drop-shadow-md group-hover:scale-[1.02] transition-transform" />
+              <span className="text-[11px] font-extrabold text-orange-400 uppercase tracking-wider leading-none">
+                Connect. Empower. Grow.
+              </span>
             </div>
-
-            {/* Brand Titles */}
-            <h1 className="font-ui font-extrabold text-2xl sm:text-3xl text-white tracking-tight drop-shadow-sm">
-              BHOI
-            </h1>
-            <p className="text-xs sm:text-sm text-amber-200/80 font-medium mt-1 mb-6">
-              Connect. Empower. Grow.
-            </p>
 
             {/* Description Banner */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 mb-6 text-left flex items-start gap-3">
