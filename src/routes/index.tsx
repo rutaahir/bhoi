@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { MobileBottomNav, type SidebarItem } from "@/components/wag/Sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { dashHomeFor } from "@/components/wag/Navbar";
+import bhoiLogo from "@/assets/Bhoi.png";
 
 type SearchParams = {
   page?: string;
@@ -958,21 +959,8 @@ function DashboardStyleHome() {
       <aside className="w-[240px] flex-shrink-0 border-r border-[#EBE3DB] bg-[#FAF3EC] flex flex-col justify-between p-4 sticky top-0 h-screen hidden lg:flex z-20">
         <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-160px)] pr-1">
           {/* Logo + Tagline */}
-          <Link to="/" className="flex items-center gap-2.5 px-2 py-1">
-            <svg width="34" height="34" viewBox="0 0 40 40" className="drop-shadow-sm flex-shrink-0">
-              <defs>
-                <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#F97316" />
-                  <stop offset="100%" stopColor="#EA580C" />
-                </linearGradient>
-              </defs>
-              <path d="M20 3 L34 9 V21 C34 29 27 35 20 37 C13 35 6 29 6 21 V9 Z" fill="url(#lg)" />
-              <path d="M14 19 L18 23 L26 14" fill="none" stroke="#FFF5EE" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <div className="leading-tight text-left">
-              <div className="font-ui font-bold text-base text-[#3E2723] tracking-tight">BHOI</div>
-              <div className="text-[10px] text-warm-muted -mt-0.5 font-medium">Connect. Empower. Grow.</div>
-            </div>
+          <Link to="/" className="flex items-center gap-2 px-2 py-1">
+            <img src={bhoiLogo} alt="BHOI Logo" className="h-10 w-auto object-contain drop-shadow-sm" />
           </Link>
 
           {/* Navigation items */}
@@ -1026,20 +1014,7 @@ function DashboardStyleHome() {
         <header className="h-14 sm:h-16 border-b border-[#EBE3DB] bg-[#FAF3EC]/95 backdrop-blur-md px-2 sm:px-4 lg:px-6 flex items-center justify-between flex-shrink-0 z-30 shadow-2xs w-full max-w-full overflow-x-clip">
           {/* Mobile Logo + App Title */}
           <Link to="/" className="flex items-center gap-1.5 lg:hidden flex-shrink-0">
-            <svg width="26" height="26" viewBox="0 0 40 40" className="drop-shadow-xs flex-shrink-0">
-              <defs>
-                <linearGradient id="lg_mob" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#F97316" />
-                  <stop offset="100%" stopColor="#EA580C" />
-                </linearGradient>
-              </defs>
-              <path d="M20 3 L34 9 V21 C34 29 27 35 20 37 C13 35 6 29 6 21 V9 Z" fill="url(#lg_mob)" />
-              <path d="M14 19 L18 23 L26 14" fill="none" stroke="#FFF5EE" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <div className="leading-tight text-left max-w-[85px] xs:max-w-[110px] sm:max-w-none">
-              <div className="font-ui font-extrabold text-[11px] sm:text-sm text-[#3E2723] tracking-tight truncate">BHOI</div>
-              <div className="text-[8px] sm:text-[9px] text-warm-muted -mt-0.5 font-semibold truncate">Connect. Empower. Grow.</div>
-            </div>
+            <img src={bhoiLogo} alt="BHOI Logo" className="h-8 w-auto object-contain drop-shadow-xs flex-shrink-0" />
           </Link>
 
           {/* Search bar (desktop) */}

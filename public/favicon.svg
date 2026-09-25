@@ -1,21 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="bhoi-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#EA580C"/>
-      <stop offset="50%" stop-color="#C2410C"/>
-      <stop offset="100%" stop-color="#9A3412"/>
+    <linearGradient id="flagGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFA000"/>
+      <stop offset="50%" stop-color="#F97316"/>
+      <stop offset="100%" stop-color="#EA580C"/>
     </linearGradient>
-    <linearGradient id="bhoi-shield" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFBE98"/>
-      <stop offset="100%" stop-color="#FFFFFF"/>
+    <linearGradient id="poleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D97706"/>
+      <stop offset="100%" stop-color="#78350F"/>
     </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="3" stdDeviation="2" flood-color="#EA580C" flood-opacity="0.5"/>
+    </filter>
   </defs>
-  <!-- Background rounded box -->
-  <rect width="100" height="100" rx="24" fill="url(#bhoi-bg)"/>
+
+  <!-- Dark Rich Background Container -->
+  <rect width="100" height="100" rx="26" fill="#2A170E"/>
+
+  <!-- Flagpole -->
+  <line x1="26" y1="14" x2="26" y2="86" stroke="url(#poleGrad)" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="26" cy="14" r="4.5" fill="#FBBF24"/>
+
+  <!-- Waving Orange Flag (Bhagwa Dhwaja) -->
+  <path d="M 28 17 Q 52 11 78 20 Q 88 24 92 27 Q 76 35 62 40 Q 78 46 92 53 Q 66 60 28 53 Z" fill="url(#flagGrad)" filter="url(#shadow)"/>
   
-  <!-- Shield Emblem -->
-  <path d="M50 18 L76 30 V52 C76 67 65 78 50 83 C35 78 24 67 24 52 V30 Z" fill="none" stroke="url(#bhoi-shield)" stroke-width="5" stroke-linejoin="round"/>
-  
-  <!-- Checkmark / Unity Symbol -->
-  <path d="M37 50 L46 59 L64 39" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Subtle flag highlight line -->
+  <path d="M 28 23 Q 54 17 76 25" fill="none" stroke="#FFE4D6" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
 </svg>

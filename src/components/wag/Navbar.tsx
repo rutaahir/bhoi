@@ -8,6 +8,7 @@ import { AvatarCircle, PlanBadge } from "./primitives";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { MobileBottomNav, type SidebarItem } from "./Sidebar";
+import bhoiLogo from "@/assets/Bhoi.png";
 
 const LINKS = [
   { to: "/", label: "Home" },
@@ -30,20 +31,7 @@ const PUBLIC_NAV_ITEMS: SidebarItem[] = [
 export function Logo() {
   return (
     <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-      <svg width="34" height="34" viewBox="0 0 40 40" className="drop-shadow-sm flex-shrink-0">
-        <defs>
-          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="oklch(0.46 0.21 265)" />
-            <stop offset="100%" stopColor="oklch(0.38 0.21 265)" />
-          </linearGradient>
-        </defs>
-        <path d="M20 3 L34 9 V21 C34 29 27 35 20 37 C13 35 6 29 6 21 V9 Z" fill="url(#lg)" />
-        <path d="M14 19 L18 23 L26 14" fill="none" stroke="oklch(0.96 0.05 85)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <div className="leading-tight">
-        <div className="font-ui font-bold text-sm sm:text-base truncate">BHOI</div>
-        <div className="text-[9px] sm:text-[10px] text-warm-muted -mt-0.5 truncate">Connect. Empower. Grow.</div>
-      </div>
+      <img src={bhoiLogo} alt="BHOI Logo" className="h-9 w-auto object-contain drop-shadow-xs flex-shrink-0" />
     </Link>
   );
 }
