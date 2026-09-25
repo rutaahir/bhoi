@@ -51,7 +51,7 @@ type LocalTab = 'overview' | 'add-property' | 'bookings' | 'ledger' | 'payments'
 
 let isFirstLoad = true;
 
-function AdminVenues() {
+export function AdminVenues() {
   const { user } = useAuth();
   const perms = useModulePermissions("venues");
   const search = useSearch({ strict: false }) as any;
