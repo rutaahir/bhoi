@@ -739,4 +739,3 @@ function MemberSubscriptionDashboard() {
     </div>
   );
 }
-export default MemberSubscriptionDashboard;

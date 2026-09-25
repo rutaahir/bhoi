@@ -29,6 +29,9 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+__pycache__/
+*.pyc
+scratch/
+backend/scratch/
 
 

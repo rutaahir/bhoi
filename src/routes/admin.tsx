@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useAuth } from "@/context/AuthContext";
-import { DashboardSidebar, MobileHeader, type SidebarItem } from "@/components/wag/Sidebar";
+import { DashboardSidebar, MobileHeader, MobileBottomNav, type SidebarItem } from "@/components/wag/Sidebar";
 import { LayoutDashboard, Building2, Users, UserCog, Calendar, Heart, Briefcase, HandHeart, Image, CreditCard, FileBarChart, FileText, ShieldCheck, Settings, MapPin, Network, Crown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -51,8 +51,10 @@ function Layout() {
       <MobileHeader title="Super Admin" items={ITEMS} />
       <div className="flex flex-1 w-full">
         <DashboardSidebar items={ITEMS} title="Super Admin" />
-        <div className="flex-1 min-w-0 pb-6 md:pb-0"><Outlet /></div>
+        <div className="flex-1 min-w-0 pb-20 md:pb-0"><Outlet /></div>
       </div>
+      <MobileBottomNav items={ITEMS} />
     </div>
   );
 }
+

@@ -38,7 +38,7 @@ export default function Footer() {
       </div>
       <div className="border-t border-warm">
         <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-warm-muted">
-          <div>© 2026 WE ARE UNITED. All rights reserved.</div>
+          <div>© 2026 BHOI. All rights reserved.</div>
           <div>Made with <span className="text-red-500">♥</span> for Indian communities</div>
         </div>
       </div>

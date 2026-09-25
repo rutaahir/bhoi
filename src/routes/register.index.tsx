@@ -13,9 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageTransition } from "@/components/wag/primitives";
+import loginVideo from "@/assets/login.mp4";
 
 export const Route = createFileRoute("/register/")({
-  head: () => ({ meta: [{ title: "Register — WE ARE UNITED" }] }),
+  head: () => ({ meta: [{ title: "Register — BHOI" }] }),
   component: Register,
 });
 
@@ -23,8 +24,11 @@ const STEPS = ["Personal", "Location", "Education", "Profession", "Community", "
 
 function Register() {
   const [step, setStep] = useState(() => {
-    const saved = sessionStorage.getItem("reg_member_step");
-    return saved ? parseInt(saved, 10) : 0;
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      const saved = sessionStorage.getItem("reg_member_step");
+      return saved ? parseInt(saved, 10) : 0;
+    }
+    return 0;
   });
   const [dir, setDir] = useState(1);
   const [done, setDone] = useState(false);
@@ -60,11 +64,13 @@ function Register() {
   }, []);
 
   const [formData, setFormData] = useState(() => {
-    const saved = sessionStorage.getItem("reg_member_draft");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) { }
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      const saved = sessionStorage.getItem("reg_member_draft");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) { }
+      }
     }
     return {
       photo: "", fullName: "", dob: "", gender: "Male", mobile: "", email: "", password: "",
@@ -88,20 +94,25 @@ function Register() {
   });
 
   useEffect(() => {
-    sessionStorage.setItem("reg_member_draft", JSON.stringify(formData));
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem("reg_member_draft", JSON.stringify(formData));
+    }
   }, [formData]);
 
   useEffect(() => {
-    sessionStorage.setItem("reg_member_step", step.toString());
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem("reg_member_step", step.toString());
+    }
   }, [step]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     let isUnloading = false;
     const handleUnload = () => { isUnloading = true; };
     window.addEventListener("beforeunload", handleUnload);
     return () => {
       window.removeEventListener("beforeunload", handleUnload);
-      if (!isUnloading) {
+      if (!isUnloading && typeof sessionStorage !== "undefined") {
         sessionStorage.removeItem("reg_member_draft");
         sessionStorage.removeItem("reg_member_step");
       }
@@ -394,19 +405,24 @@ function Register() {
 
   return (
     <PageTransition>
-      <div className="relative min-h-[100dvh] w-full bg-[#FCF5EC] text-[#2C1D12] font-sans flex flex-col justify-between overflow-x-hidden selection:bg-orange-200 lg:h-screen lg:overflow-hidden">
+      <div className="relative min-h-[100dvh] w-full text-white font-sans flex flex-col justify-between overflow-x-hidden selection:bg-orange-500 selection:text-white">
+        {/* Background Video */}
+        <video
+          src={loginVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none scale-105"
+        />
 
-        {/* Absolute Sparkles & Ambient Glows to enrich the visual canvas */}
-        <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-orange-300 rounded-full animate-pulse opacity-40"></div>
-        <div className="absolute top-1/3 right-1/4 w-3.5 h-3.5 bg-[#FFF0DB] rounded-full filter blur-[1px] animate-sparkle"></div>
-        <div className="absolute top-[15%] left-[45%] w-2.5 h-2.5 bg-orange-400 rounded-full filter blur-[1px] animate-sparkle" style={{ animationDelay: "1s" }}></div>
-        <div className="absolute top-[60%] right-[38%] w-3 h-3 bg-white rounded-full filter blur-[1.5px] animate-sparkle" style={{ animationDelay: "1.5s" }}></div>
+        {/* Video Overlay with ambient backdrop blur */}
+        <div className="fixed inset-0 bg-gradient-to-tr from-black/95 via-black/80 to-[#1C0E06]/90 backdrop-blur-[2px] z-[1] pointer-events-none" />
 
-        {/* TOP HEADER: BRAND IDENTITY */}
-        <header className="w-full max-w-7xl mx-auto px-6 lg:px-8 xl:px-12 pt-4 lg:pt-6 md:pt-10 z-20 flex justify-between items-start pointer-events-auto">
-          <div className="flex items-center gap-4 transition-transform hover:scale-[1.02] duration-300">
-            <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-[#FB923C] to-[#EA580C] flex items-center justify-center shadow-[0_6px_20px_rgba(234,88,12,0.22)]">
-              {/* Elegant SVG Triple-person community logo */}
+        {/* TOP HEADER */}
+        <header className="w-full max-w-7xl mx-auto px-6 pt-6 pb-2 z-20 flex justify-between items-center relative">
+          <div className="flex items-center gap-3">
+            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FB923C] to-[#EA580C] flex items-center justify-center shadow-[0_6px_24px_rgba(234,88,12,0.4)] border border-white/20">
               <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-white" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="12" cy="7" r="2.5" fill="currentColor" />
                 <path d="M7.5 15.5C7.5 13 9.5 11.5 12 11.5C14.5 11.5 16.5 13 16.5 15.5" strokeLinecap="round" strokeWidth="1.8" />
@@ -415,228 +431,85 @@ function Register() {
                 <circle cx="16.5" cy="9.5" r="1.8" fill="currentColor" className="opacity-80" />
                 <path d="M16.5 13.2C18.2 13.2 19.5 14.2 19.5 16" strokeLinecap="round" strokeWidth="1.5" className="opacity-80" />
               </svg>
-              <div className="absolute -inset-0.5 rounded-xl bg-orange-400 opacity-20 filter blur-sm"></div>
             </div>
             <div>
-              <h1 className="font-extrabold text-[17px] text-[#3D1A00] tracking-tight leading-none">
-                WE ARE UNITED
+              <h1 className="font-extrabold text-xl text-white tracking-tight leading-none drop-shadow-md">
+                BHOI
               </h1>
-              <p className="text-[11px] text-[#EA580C] font-semibold mt-1 tracking-wider uppercase">
-                Aapni Samaj, Aapnu Network
+              <p className="text-[10px] text-orange-400 font-bold tracking-wider uppercase mt-0.5">
+                Connect. Empower. Grow.
               </p>
             </div>
           </div>
 
           <Link
             to="/login"
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-orange-200 bg-white/70 hover:bg-orange-50 hover:border-orange-300 text-[11px] font-bold text-orange-700 transition-all shadow-sm active:scale-95 pointer-events-auto"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/25 bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all backdrop-blur-md shadow-lg active:scale-95"
           >
             Already have an account? Sign In
           </Link>
         </header>
 
-        {/* MAIN BODY: IMMERSIVE UNIFIED SCENE LAYOUT */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-6 lg:px-8 xl:px-12 flex flex-col lg:grid lg:grid-cols-[1.15fr_1fr] gap-8 sm:gap-12 lg:gap-16 items-center justify-center relative z-10 py-6 lg:py-0 lg:overflow-hidden">
+        {/* MAIN BODY: SPLIT VIEW LAYOUT */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 z-10 flex flex-col justify-center relative">
+          <div className="grid lg:grid-cols-12 gap-8 xl:gap-12 items-center w-full">
 
-          {/* LEFT COLUMN: HIGH-FIDELITY VECTOR SCENE Backdrop + Stepper Timeline */}
-          <div className="flex items-center justify-end w-full h-[260px] sm:h-[350px] lg:h-[520px] xl:h-[580px] relative pointer-events-none select-none">
-
-            {/* PROGRESS TIMELINE (Overlayed absolutely on the left of the scene) */}
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 hidden lg:flex flex-col justify-between z-20 h-[80%] w-32 pointer-events-auto">
-              <svg className="absolute left-[24px] top-6 bottom-6 w-12 h-[calc(100%-48px)] -z-10" viewBox="0 0 50 600" preserveAspectRatio="none">
-                <path d="M 0 0 Q 30 300 0 600" fill="transparent" stroke="#FFA642" strokeWidth="2" strokeDasharray="6 6" className="opacity-45" />
-              </svg>
-              {STEPS.map((s, i) => {
-                const isActive = step === i;
-                const isPast = step > i;
-                const curveMargins = ['0px', '8px', '16px', '16px', '8px', '0px'];
-                return (
-                  <div key={s} className="relative flex items-center gap-3 group" style={{ marginLeft: curveMargins[i] }}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 transition-all duration-500 shadow-sm ${isActive
-                      ? 'bg-gradient-to-br from-[#FB923C] to-[#EA580C] text-white shadow-[0_6px_20px_rgba(234,88,12,0.3)] scale-[1.10] font-extrabold text-[11px]'
-                      : isPast
-                        ? 'bg-orange-50 text-[#EA580C] border-2 border-orange-200 font-bold text-[11px]'
-                        : 'bg-white text-[#7A6455] border border-orange-100 shadow-sm text-[11px]'
-                      }`}>
-                      {i + 1}
-                    </div>
-                    <div className={`text-[11px] transition-all duration-500 whitespace-nowrap ${isActive ? 'text-[#EA580C] font-extrabold' : 'text-[#7A6455]/70 font-semibold'}`}>
-                      {s}
-                    </div>
-                  </div>
-                );
-              }).reverse()}
-            </div>
-
-            {/* SVG Backdrop from login page */}
-            <svg
-              viewBox="0 0 500 550"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-full h-full object-contain filter drop-shadow-[0_12px_45px_rgba(238,150,80,0.12)] overflow-visible transform scale-105 lg:scale-[1.12] xl:scale-[1.2] origin-bottom pr-0 lg:pr-2 xl:pr-4"
-            >
-
-
-
-              <defs>
-                <filter id="softBlur" x="-30%" y="-30%" width="160%" height="160%">
-                  <feGaussianBlur stdDeviation="8" />
-                </filter>
-
-                <linearGradient id="doorwaySun" x1="250" y1="210" x2="250" y2="415" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#FFF2DC" />
-                  <stop offset="50%" stopColor="#FFA642" />
-                  <stop offset="100%" stopColor="#FFF3E0" />
-                </linearGradient>
-
-                <linearGradient id="pathGradient" x1="250" y1="415" x2="250" y2="550" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#FFF3E0" />
-                  <stop offset="20%" stopColor="#FFA642" />
-                  <stop offset="55%" stopColor="#F97316" />
-                  <stop offset="100%" stopColor="#EA580C" />
-                </linearGradient>
-
-                <linearGradient id="portalBevel" x1="160" y1="210" x2="340" y2="210" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#ECE0D2" />
-                  <stop offset="15%" stopColor="#FFFFFF" />
-                  <stop offset="85%" stopColor="#FFFFFF" />
-                  <stop offset="100%" stopColor="#E4D4C3" />
-                </linearGradient>
-
-                <linearGradient id="portalInnerBevel" x1="178" y1="220" x2="322" y2="220" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#D9C3B0" />
-                  <stop offset="100%" stopColor="#F9EFE3" />
-                </linearGradient>
-
-                <linearGradient id="leafGradLeft" x1="100" y1="300" x2="160" y2="450" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#FFA74F" />
-                  <stop offset="100%" stopColor="#DB5E10" />
-                </linearGradient>
-
-                <linearGradient id="leafGradRight" x1="340" y1="300" x2="400" y2="450" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#FF9C3B" />
-                  <stop offset="100%" stopColor="#EB5705" />
-                </linearGradient>
-              </defs>
-
-              <g>
-                {/* 1. SEATING SHADOW under the portal */}
-                <ellipse cx="250" cy="415" rx="100" ry="8" fill="#D3BEA8" opacity="0.38" />
-
-                {/* 2. OUTER ARCHWAY FRAME */}
-                <path d="M160 415 L160 210 Q160 110 250 110 Q340 110 340 210 L340 415 Z" fill="url(#portalBevel)" />
-
-                {/* 3. INNER ARCH PORTAL FRAME DEPTH */}
-                <path d="M178 415 L178 215 Q178 132 250 132 Q322 132 322 215 L322 415 Z" fill="url(#portalInnerBevel)" />
-
-                {/* 4. DOORWAY INTERIOR OPENING / SKY RADIANCE */}
-                <path d="M192 415 L192 219 Q192 152 250 152 Q308 152 308 219 L308 415 Z" fill="url(#doorwaySun)" />
-
-                {/* 5. GENTLE SUNLIGHT WAVES */}
-                <ellipse cx="250" cy="230" rx="42" ry="34" fill="#FFFBF5" opacity="0.55" />
-                <ellipse cx="250" cy="245" rx="28" ry="22" fill="#FFFDFD" opacity="0.45" />
-
-                {/* 6. GOLDEN CITY SKYLINE SILHOUETTE */}
-                <g fill="#EA7D1E" opacity="0.45">
-                  <rect x="210" y="278" width="8" height="28" rx="0.5" />
-                  <rect x="221" y="260" width="10" height="46" rx="0.5" />
-                  <rect x="234" y="282" width="6" height="24" rx="0.5" />
-                  <rect x="242" y="268" width="9" height="38" rx="0.5" />
-                  <rect x="254" y="248" width="13" height="58" rx="0.5" />
-                  <rect x="270" y="272" width="7" height="34" rx="0.5" />
-                  <rect x="280" y="263" width="9" height="43" rx="0.5" />
-                  <rect x="291" y="284" width="6" height="22" rx="0.5" />
-                  {/* Spires */}
-                  <polygon points="226,260 228.5,248 231,260" />
-                  <polygon points="260.5,248 263.5,232 266.5,248" />
-                  <polygon points="284.5,263 287.5,249 290.5,263" />
-                </g>
-
-                {/* 7. FLYING BIRDS IN PORTAL SKY */}
-                <g stroke="#E26A04" strokeWidth="1.2" fill="none" opacity="0.6">
-                  <path d="M211 210 Q215 206 219 210 Q223 206 227 210" />
-                  <path d="M285 198 Q288 195 291 198 Q294 195 297 198" />
-                  <path d="M272 215 Q274 212 277 215 Q280 212 282 215" />
-                </g>
-
-                {/* 8. THE WINDING PATHWAY */}
-                <path d="M 235 415 L 265 415 C 265 435, 230 445, 230 465 C 230 485, 340 480, 340 510 C 340 530, 350 540, 390 550 L 110 550 C 170 540, 240 530, 240 510 C 240 480, 150 485, 150 465 C 150 445, 235 435, 235 415 Z" fill="#803D0D" opacity="0.14" transform="translate(10, 8)" filter="url(#softBlur)" />
-                <path d="M 235 415 L 265 415 C 265 435, 230 445, 230 465 C 230 485, 340 480, 340 510 C 340 530, 350 540, 390 550 L 110 550 C 170 540, 240 530, 240 510 C 240 480, 150 485, 150 465 C 150 445, 235 435, 235 415 Z" fill="url(#pathGradient)" />
-                <ellipse cx="250" cy="415" rx="100" ry="4" fill="#602E08" opacity="0.14" filter="url(#softBlur)" />
-
-                {/* 9. LEFT PALM PLANT BRANCH */}
-                <g className="animate-swayOrigin" style={{ transformOrigin: "135px 410px" }}>
-                  <path d="M135 415 Q140 330 144 285" stroke="#CD5507" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                  <path d="M135 400 Q105 370 95 330 Q122 334 136 368 Z" fill="url(#leafGradLeft)" opacity="0.95" />
-                  <path d="M136 380 Q165 352 168 316 Q142 322 136 352 Z" fill="url(#leafGradLeft)" opacity="0.88" />
-                  <path d="M138 350 Q106 322 100 286 Q125 292 138 322 Z" fill="url(#leafGradLeft)" opacity="0.85" />
-                  <path d="M140 330 Q168 304 172 272 Q148 278 140 306 Z" fill="url(#leafGradLeft)" opacity="0.78" />
-                  <path d="M141 310 Q116 284 112 250 Q132 258 141 286 Z" fill="url(#leafGradLeft)" opacity="0.72" />
-                  <path d="M143 290 Q126 266 128 238 Q138 245 143 270 Z" fill="url(#leafGradLeft)" opacity="0.65" />
-                </g>
-
-                {/* 10. RIGHT PALM PLANT BRANCH */}
-                <g className="animate-swayOrigin" style={{ transformOrigin: "365px 410px" }}>
-                  <path d="M365 415 Q360 330 356 285" stroke="#CD5507" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                  <path d="M365 400 Q395 370 405 330 Q378 334 364 368 Z" fill="url(#leafGradRight)" opacity="0.95" />
-                  <path d="M364 380 Q335 352 332 316 Q358 322 364 352 Z" fill="url(#leafGradRight)" opacity="0.88" />
-                  <path d="M362 350 Q394 322 400 286 Q375 292 362 322 Z" fill="url(#leafGradRight)" opacity="0.85" />
-                  <path d="M360 330 Q332 304 328 272 Q352 278 360 306 Z" fill="url(#leafGradRight)" opacity="0.78" />
-                  <path d="M359 310 Q384 284 388 250 Q368 258 359 286 Z" fill="url(#leafGradRight)" opacity="0.72" />
-                  <path d="M357 290 Q374 266 372 238 Q362 245 357 270 Z" fill="url(#leafGradRight)" opacity="0.65" />
-                </g>
-
-                {/* 11. LEFT SUSPENDED BADGES: Lock Circle */}
-                <g className={isPasswordFocused ? "animate-bounce" : "animate-float"} style={{ transition: "all 0.5s ease" }}>
-                  <path d="M125 150 Q115 110 130 95 Q135 112 128 135" stroke="#E26A04" strokeWidth="1.5" fill="none" opacity="0.5" />
-                  <path d="M130 95 C122 110, 115 130, 126 154 C132 135, 138 120, 130 95 Z" fill="#FFA539" opacity="0.45" />
-                  <path d="M128 155 Q115 220, 110 270" stroke="#DA7D1E" strokeWidth="1.2" strokeLinecap="round" strokeDasharray="3 4.5" opacity="0.5" />
-                  <path d="M110 270 Q105 320, 122 360" stroke="#DA7D1E" strokeWidth="1.2" strokeLinecap="round" strokeDasharray="3 4.5" opacity="0.5" />
-                  <circle cx="110" cy="270" r="18" fill="white" className="shadow-lg" />
-                  <circle cx="110" cy="270" r="14" fill="#FFEFE0" />
-                  <rect x="104" y="270" width="12" height="10" rx="1.8" fill="#F87313" />
-                  <path d="M106.5 270 L106.5 266.5 Q106.5 262.5 110 262.5 Q113.5 262.5 113.5 266.5 L113.5 270" stroke="#F87313" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-                  <circle cx="110" cy="275" r="1" fill="white" />
-                </g>
-
-                {/* 12. RIGHT SUSPENDED BADGE: Avatar Circle */}
-                <g className={isEmailFocused ? "animate-bounce" : "animate-float-slow"} style={{ transition: "all 0.5s ease" }}>
-                  <path d="M380 180 Q305 240, 312 310" stroke="#DA7D1E" strokeWidth="1.3" strokeLinecap="round" strokeDasharray="3 5" opacity="0.5" />
-                  <circle cx="380" cy="180" r="24" fill="white" className="shadow-md" />
-                  <circle cx="380" cy="180" r="19" fill="#FFF4E6" />
-                  <circle cx="380" cy="174" r="6" fill="#F87313" opacity="0.82" />
-                  <ellipse cx="380" cy="189" rx="10" ry="6" fill="#F87313" opacity="0.65" />
-                </g>
-
-                {/* 13. ADDITIONAL ORNAMENTAL BUSHES GIVING STABILITY */}
-                <ellipse cx="85" cy="420" rx="36" ry="14" fill="#FFA539" opacity="0.25" />
-                <ellipse cx="415" cy="420" rx="36" ry="14" fill="#FFA539" opacity="0.25" />
-              </g>
-            </svg>
-
-          </div>
-
-          {/* RIGHT COLUMN: CORE REGISTER FLOATING FORM */}
-          <div className="flex flex-col justify-between h-full lg:h-full lg:overflow-y-auto custom-scrollbar w-full max-w-[480px] mx-auto py-4 z-10">
-            <div className="my-auto pb-6">
-
-              <div className="text-center mb-6">
-                <div className="text-[#EA580C] text-[10px] font-extrabold mb-1 tracking-widest uppercase">Step {step + 1} of 6</div>
-                <h2 className="text-2xl font-serif text-[#2C1D12] font-bold">{STEPS[step]} Details</h2>
-                <div className="flex justify-center mt-2">
-                  <svg width="60" height="8" viewBox="0 0 60 8">
-                    <path d="M0 4 H25 M35 4 H60 M30 1 L33 4 L30 7 L27 4 Z" fill="#FFA642" stroke="#FFA642" />
-                  </svg>
+            {/* LEFT COLUMN: FLOATING FIELDS */}
+            <div className="lg:col-span-7 xl:col-span-7 flex flex-col justify-center w-full">
+              {/* Stepper Progress Bar */}
+              <div className="mb-6">
+                <div className="grid grid-cols-6 gap-2 relative">
+                  {STEPS.map((s, i) => {
+                    const isActive = step === i;
+                    const isPast = step > i;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => isPast && setStep(i)}
+                        disabled={!isPast}
+                        className={`flex flex-col items-center text-center transition-all ${isPast ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
+                      >
+                        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-extrabold text-xs transition-all duration-300 ${
+                          isActive
+                            ? 'bg-gradient-to-r from-[#F25C05] to-[#FFA74D] text-white shadow-lg shadow-orange-500/40 ring-4 ring-orange-500/20 scale-105'
+                            : isPast
+                              ? 'bg-orange-500 text-white font-bold'
+                              : 'bg-white/10 text-white/40 border border-white/15'
+                        }`}>
+                          {isPast ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                        </div>
+                        <span className={`text-[10px] font-bold mt-2 truncate w-full ${
+                          isActive ? 'text-orange-400 font-extrabold' : isPast ? 'text-white/80' : 'text-white/40'
+                        }`}>
+                          {s}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
+              {/* Step Title Header */}
+              <div className="mb-6">
+                <span className="text-orange-400 text-[11px] font-extrabold tracking-widest uppercase block">
+                  Step {step + 1} of {STEPS.length}
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif text-white font-bold mt-1 drop-shadow-sm">
+                  {STEPS[step]} Information
+                </h2>
+              </div>
+
+              {/* Form Content */}
               <div className="w-full">
                 <AnimatePresence mode="wait" custom={dir}>
-                  <motion.div key={step} custom={dir}
-                    initial={{ x: dir > 0 ? 30 : -30, opacity: 0 }}
+                  <motion.div
+                    key={step}
+                    custom={dir}
+                    initial={{ x: dir > 0 ? 20 : -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: dir > 0 ? -30 : 30, opacity: 0 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    exit={{ x: dir > 0 ? -20 : 20, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
                     className="space-y-5"
                   >
                     {step === 0 && (
@@ -675,44 +548,94 @@ function Register() {
                   </motion.div>
                 </AnimatePresence>
 
-                {/* ACTIONS */}
-                <div className="flex justify-between items-center mt-8 pt-4 border-t border-orange-100">
+                {/* ACTION BUTTONS */}
+                <div className="flex justify-between items-center mt-8 pt-6 border-t border-white/15">
                   <button
+                    type="button"
                     onClick={back}
                     disabled={step === 0 || isSubmitting}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-orange-200 bg-white/70 hover:bg-orange-50 hover:border-orange-300 text-[11px] font-bold text-orange-700 transition-all shadow-sm active:scale-95 disabled:opacity-40"
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all backdrop-blur-md shadow-sm active:scale-95 disabled:opacity-30 cursor-pointer"
                   >
-                    <ChevronLeft className="w-3.5 h-3.5 text-orange-500" />
+                    <ChevronLeft className="w-4 h-4 text-orange-400" />
                     Back
                   </button>
                   <button
+                    type="button"
                     onClick={next}
                     disabled={isSubmitting}
-                    className="relative px-8 py-3 rounded-full bg-gradient-to-r from-[#F25C05] to-[#FFA74D] hover:from-[#E14D02] hover:to-[#FF952B] hover:shadow-[0_12px_40px_rgba(242,92,5,0.45)] focus:outline-none text-white font-extrabold text-sm tracking-wide shadow-[0_8px_30px_rgba(242,92,5,0.3)] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group disabled:cursor-not-allowed disabled:opacity-75"
+                    className="relative px-9 py-3 rounded-full bg-gradient-to-r from-[#F25C05] to-[#FFA74D] hover:from-[#E14D02] hover:to-[#FF952B] focus:outline-none text-white font-extrabold text-sm tracking-wide shadow-xl shadow-orange-500/40 hover:scale-[1.02] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group disabled:cursor-not-allowed disabled:opacity-75 cursor-pointer"
                   >
                     <span className="group-hover:translate-x-0.5 transition-transform duration-200">
-                      {isSubmitting ? "Submitting..." : step === STEPS.length - 1 ? "Submit" : "Next Step"}
+                      {isSubmitting ? "Submitting..." : step === STEPS.length - 1 ? "Submit Registration" : "Next Step"}
                     </span>
                     {!isSubmitting && <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />}
-                    <div className="absolute top-1.5 right-6 w-1.5 h-1.5 bg-white rounded-full animate-ping opacity-0 group-hover:opacity-100 duration-500"></div>
                   </button>
                 </div>
               </div>
             </div>
-          </div>
 
+            {/* RIGHT COLUMN: HIGH-IMPACT VIDEO SHOWCASE PANEL */}
+            <div className="hidden lg:flex lg:col-span-5 xl:col-span-5 flex-col justify-center items-center w-full">
+              <div className="relative w-full h-[580px] xl:h-[620px] rounded-[36px] overflow-hidden border border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.7)] group backdrop-blur-xl bg-black/40">
+                {/* Embedded Video Player */}
+                <video
+                  src={loginVideo}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+
+                {/* Dark gradient overlay over right video frame */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/40" />
+
+                {/* Top Badge */}
+                <div className="absolute top-6 left-6 px-4 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-xs font-bold text-white flex items-center gap-2 shadow-lg">
+                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping" />
+                  <span>BHOI Community Portal</span>
+                </div>
+
+                {/* Bottom Showcase Info */}
+                <div className="absolute bottom-8 left-8 right-8 text-white z-10">
+                  <span className="text-[10px] font-extrabold text-orange-400 uppercase tracking-widest block mb-1">
+                    Gujarati Network
+                  </span>
+                  <h3 className="text-2xl font-serif font-bold text-white drop-shadow-md">
+                    Connect. Empower. Grow.
+                  </h3>
+                  <p className="text-xs text-white/80 mt-2 leading-relaxed font-medium">
+                    Join thousands of verified BHOI members across India and global communities. Build meaningful personal and professional relationships.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-white/20 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-xl bg-orange-500/20 border border-orange-400/40 flex items-center justify-center text-orange-400 font-bold">✓</div>
+                      <div>
+                        <div className="font-extrabold text-white text-xs">100% Verified</div>
+                        <div className="text-[10px] text-white/60">Community Profiles</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-xl bg-orange-500/20 border border-orange-400/40 flex items-center justify-center text-orange-400 font-bold">🌐</div>
+                      <div>
+                        <div className="font-extrabold text-white text-xs">Global Reach</div>
+                        <div className="text-[10px] text-white/60">Worldwide Members</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </main>
 
-        {/* FOOTER AREA */}
-        <footer className="w-full max-w-7xl mx-auto px-6 lg:px-8 xl:px-12 py-4 lg:py-6 z-20 flex flex-col md:flex-row justify-between items-center text-[#7A6455] text-[11px] font-semibold gap-2 mt-auto">
-          <p className="tracking-wide">
-            © 2026 WE ARE UNITED. All rights reserved.
-          </p>
-          <p className="opacity-75 hidden md:block">
-            Gujarati Community Network
-          </p>
+        {/* FOOTER */}
+        <footer className="w-full max-w-7xl mx-auto px-6 py-4 z-20 flex flex-col md:flex-row justify-between items-center text-white/60 text-xs font-medium gap-2">
+          <p>© 2026 BHOI. All rights reserved.</p>
+          <p className="opacity-80 hidden md:block">Gujarati Community Network</p>
         </footer>
-
       </div>
     </PageTransition>
   );
@@ -720,16 +643,16 @@ function Register() {
 
 const BlobInput = ({ label, icon: Icon, value, onChange, suffix, ...p }: any) => {
   return (
-    <div className="flex items-center gap-3 bg-white/60 hover:bg-white/80 border border-[#E6D9C8] rounded-2xl p-3 px-4 transition-all focus-within:ring-2 focus-within:ring-orange-500/10 focus-within:border-[#EA580C] focus-within:bg-white w-full">
-      {Icon && <Icon className="w-5 h-5 text-[#7A6455]/65 shrink-0" />}
+    <div className="flex items-center gap-3 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-orange-400/50 rounded-2xl p-3.5 px-4 transition-all focus-within:ring-2 focus-within:ring-orange-500/30 focus-within:border-orange-500 focus-within:bg-white/15 w-full backdrop-blur-md shadow-md">
+      {Icon && <Icon className="w-5 h-5 text-orange-400 shrink-0" />}
       <div className="flex-1 min-w-0">
-        <span className="text-[10px] font-bold text-[#EA580C] uppercase tracking-wider block leading-tight">
+        <span className="text-[10px] font-extrabold text-orange-300 uppercase tracking-wider block leading-tight">
           {label}
         </span>
         <input
           value={value || ""}
           onChange={onChange}
-          className="w-full bg-transparent border-none outline-none text-sm text-[#2C1D12] font-bold p-0 focus:ring-0 mt-0.5"
+          className="w-full bg-transparent border-none outline-none text-sm text-white font-bold p-0 focus:ring-0 mt-0.5 placeholder:text-white/40"
           placeholder=""
           {...p}
         />
@@ -746,29 +669,35 @@ const BlobSelect = ({
 }: {
   label: string; options: SelectOption[]; value: string; onChange: (val: string) => void; placeholder?: string
 }) => {
+  const safeOptions = (options || []).map((o, idx) => {
+    const rawVal = typeof o === "string" ? o : o?.value;
+    const rawLbl = typeof o === "string" ? o : o?.label;
+    const val = (rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== "") ? String(rawVal) : `opt_${idx}`;
+    const lbl = (rawLbl !== undefined && rawLbl !== null && String(rawLbl).trim() !== "") ? String(rawLbl) : val;
+    return { val, lbl };
+  });
+
+  const selectedValue = safeOptions.some(o => o.val === value) ? value : undefined;
+
   return (
-    <div className="bg-white/60 hover:bg-white/80 border border-[#E6D9C8] rounded-2xl p-3 px-4 transition-all focus-within:ring-2 focus-within:ring-orange-500/10 focus-within:border-[#EA580C] focus-within:bg-white w-full">
+    <div className="bg-white/10 hover:bg-white/15 border border-white/20 hover:border-orange-400/50 rounded-2xl p-3.5 px-4 transition-all focus-within:ring-2 focus-within:ring-orange-500/30 focus-within:border-orange-500 focus-within:bg-white/15 w-full backdrop-blur-md shadow-md">
       <div className="flex-1 min-w-0">
-        <span className="text-[10px] font-bold text-[#EA580C] uppercase tracking-wider block leading-tight">
+        <span className="text-[10px] font-extrabold text-orange-300 uppercase tracking-wider block leading-tight">
           {label}
         </span>
         <RadixSelect
-          value={value || undefined}
+          value={selectedValue}
           onValueChange={onChange}
         >
-          <SelectTrigger className="w-full bg-transparent border-none outline-none shadow-none focus:ring-0 p-0 text-sm text-[#2C1D12] font-bold flex items-center justify-between h-auto mt-0.5">
+          <SelectTrigger className="w-full bg-transparent border-none outline-none shadow-none focus:ring-0 p-0 text-sm text-white font-bold flex items-center justify-between h-auto mt-0.5">
             <SelectValue placeholder={placeholder || `Select ${label}`} />
           </SelectTrigger>
-          <SelectContent className="max-h-[250px] overflow-y-auto bg-white border border-orange-100 rounded-2xl shadow-xl p-1 z-[100]">
-            {options.map((o) => {
-              const val = typeof o === "string" ? o : o.value;
-              const lbl = typeof o === "string" ? o : o.label;
-              return (
-                <SelectItem key={val} value={val} className="rounded-xl focus:bg-orange-50 focus:text-orange-700 cursor-pointer py-2">
-                  {lbl}
-                </SelectItem>
-              );
-            })}
+          <SelectContent className="max-h-[250px] overflow-y-auto bg-[#1C100B]/95 backdrop-blur-2xl border border-white/20 text-white rounded-2xl shadow-2xl p-1.5 z-[100]">
+            {safeOptions.map((o, idx) => (
+              <SelectItem key={`${o.val}_${idx}`} value={o.val} className="rounded-xl text-white/90 focus:bg-orange-600 focus:text-white cursor-pointer py-2 font-semibold">
+                {o.lbl}
+              </SelectItem>
+            ))}
           </SelectContent>
         </RadixSelect>
       </div>
@@ -780,7 +709,10 @@ const BlobDateOfBirth = ({ value, onChange }: { value: string; onChange: (val: s
   const [year, month, day] = value ? value.split("-") : ["", "", ""];
 
   const update = (y: string, m: string, d: string) => {
-    onChange(`${y || new Date().getFullYear().toString()}-${m ? m.padStart(2, "0") : "01"}-${d ? d.padStart(2, "0") : "01"}`);
+    const safeY = y || new Date().getFullYear().toString();
+    const safeM = m ? m.padStart(2, "0") : "01";
+    const safeD = d ? d.padStart(2, "0") : "01";
+    onChange(`${safeY}-${safeM}-${safeD}`);
   };
 
   const days = Array.from({ length: 31 }, (_, i) => String(i + 1));
@@ -792,45 +724,49 @@ const BlobDateOfBirth = ({ value, onChange }: { value: string; onChange: (val: s
   ];
   const years = Array.from({ length: 100 }, (_, i) => String(new Date().getFullYear() - i));
 
+  const parsedDay = day && !isNaN(parseInt(day, 10)) ? String(parseInt(day, 10)) : undefined;
+  const parsedMonth = month && !isNaN(parseInt(month, 10)) ? String(parseInt(month, 10)) : undefined;
+  const parsedYear = year && years.includes(year) ? year : undefined;
+
   return (
-    <div className="bg-white/60 hover:bg-white/80 border border-[#E6D9C8] rounded-2xl p-3 px-4 transition-all focus-within:ring-2 focus-within:ring-orange-500/10 focus-within:border-[#EA580C] focus-within:bg-white w-full">
-      <span className="text-[10px] font-bold text-[#EA580C] uppercase tracking-wider block leading-tight">
+    <div className="bg-white/10 hover:bg-white/15 border border-white/20 hover:border-orange-400/50 rounded-2xl p-3.5 px-4 transition-all focus-within:ring-2 focus-within:ring-orange-500/30 focus-within:border-orange-500 focus-within:bg-white/15 w-full backdrop-blur-md shadow-md">
+      <span className="text-[10px] font-extrabold text-orange-300 uppercase tracking-wider block leading-tight">
         Date of Birth
       </span>
-      <div className="flex gap-4 items-center mt-0.5 divide-x divide-[#E6D9C8]/60">
+      <div className="flex gap-4 items-center mt-0.5 divide-x divide-white/20">
         <RadixSelect
-          value={day ? String(parseInt(day, 10)) : undefined}
+          value={parsedDay}
           onValueChange={(d) => update(year, month, d)}
         >
-          <SelectTrigger className="flex-1 bg-transparent border-none outline-none shadow-none focus:ring-0 p-0 text-sm text-[#2C1D12] font-bold flex items-center justify-between h-auto">
+          <SelectTrigger className="flex-1 bg-transparent border-none outline-none shadow-none focus:ring-0 p-0 text-sm text-white font-bold flex items-center justify-between h-auto">
             <SelectValue placeholder="DD" />
           </SelectTrigger>
-          <SelectContent className="max-h-[200px] overflow-y-auto bg-white border border-orange-100 rounded-xl shadow-xl z-[100]">
-            {days.map((d) => <SelectItem key={d} value={d} className="rounded-lg">{d}</SelectItem>)}
+          <SelectContent className="max-h-[200px] overflow-y-auto bg-[#1C100B]/95 backdrop-blur-2xl border border-white/20 text-white rounded-xl shadow-2xl z-[100]">
+            {days.map((d) => <SelectItem key={d} value={d} className="rounded-lg text-white/90 focus:bg-orange-600 focus:text-white cursor-pointer">{d}</SelectItem>)}
           </SelectContent>
         </RadixSelect>
 
         <RadixSelect
-          value={month ? String(parseInt(month, 10)) : undefined}
+          value={parsedMonth}
           onValueChange={(m) => update(year, m, day)}
         >
-          <SelectTrigger className="flex-1 bg-transparent border-none outline-none shadow-none focus:ring-0 p-0 pl-3 text-sm text-[#2C1D12] font-bold flex items-center justify-between h-auto">
+          <SelectTrigger className="flex-1 bg-transparent border-none outline-none shadow-none focus:ring-0 p-0 pl-3 text-sm text-white font-bold flex items-center justify-between h-auto">
             <SelectValue placeholder="MM" />
           </SelectTrigger>
-          <SelectContent className="max-h-[200px] overflow-y-auto bg-white border border-orange-100 rounded-xl shadow-xl z-[100]">
-            {months.map((m) => <SelectItem key={m.value} value={m.value} className="rounded-lg">{m.label}</SelectItem>)}
+          <SelectContent className="max-h-[200px] overflow-y-auto bg-[#1C100B]/95 backdrop-blur-2xl border border-white/20 text-white rounded-xl shadow-2xl z-[100]">
+            {months.map((m) => <SelectItem key={m.value} value={m.value} className="rounded-lg text-white/90 focus:bg-orange-600 focus:text-white cursor-pointer">{m.label}</SelectItem>)}
           </SelectContent>
         </RadixSelect>
 
         <RadixSelect
-          value={year || undefined}
+          value={parsedYear}
           onValueChange={(y) => update(y, month, day)}
         >
-          <SelectTrigger className="flex-[1.2] bg-transparent border-none outline-none shadow-none focus:ring-0 p-0 pl-3 text-sm text-[#2C1D12] font-bold flex items-center justify-between h-auto">
+          <SelectTrigger className="flex-[1.2] bg-transparent border-none outline-none shadow-none focus:ring-0 p-0 pl-3 text-sm text-white font-bold flex items-center justify-between h-auto">
             <SelectValue placeholder="YYYY" />
           </SelectTrigger>
-          <SelectContent className="max-h-[200px] overflow-y-auto bg-white border border-orange-100 rounded-xl shadow-xl z-[100]">
-            {years.map((y) => <SelectItem key={y} value={y} className="rounded-lg">{y}</SelectItem>)}
+          <SelectContent className="max-h-[200px] overflow-y-auto bg-[#1C100B]/95 backdrop-blur-2xl border border-white/20 text-white rounded-xl shadow-2xl z-[100]">
+            {years.map((y) => <SelectItem key={y} value={y} className="rounded-lg text-white/90 focus:bg-orange-600 focus:text-white cursor-pointer">{y}</SelectItem>)}
           </SelectContent>
         </RadixSelect>
       </div>
@@ -851,15 +787,15 @@ function Personal({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-center mb-8">
+      <div className="flex justify-start mb-6">
         <label className="cursor-pointer group flex items-center gap-6">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-[0_8px_30px_rgba(238,150,80,0.15)] flex items-center justify-center overflow-hidden transition-all group-hover:scale-[1.02] duration-300">
-              {data.photo ? <img src={data.photo} alt="" className="w-full h-full object-cover" /> : <User className="w-10 h-10 text-[#7A6455]/40" />}
-              <div className="absolute inset-0 bg-[#EA580C]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="w-20 h-20 rounded-full bg-white/10 border-2 border-white/30 shadow-xl flex items-center justify-center overflow-hidden transition-all group-hover:scale-[1.02] duration-300 backdrop-blur-md">
+              {data.photo ? <img src={data.photo} alt="" className="w-full h-full object-cover" /> : <User className="w-9 h-9 text-orange-300" />}
+              <div className="absolute inset-0 bg-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
-            <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#FB923C] to-[#EA580C] flex items-center justify-center text-white shadow-lg border-2 border-white group-hover:scale-110 transition-transform duration-300">
-              <Upload className="w-3.5 h-3.5" />
+            <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-gradient-to-br from-[#FB923C] to-[#EA580C] flex items-center justify-center text-white shadow-lg border-2 border-black group-hover:scale-110 transition-transform duration-300">
+              <Upload className="w-3 h-3" />
             </div>
           </div>
           <input type="file" accept="image/*" className="hidden" onChange={e => {
@@ -871,8 +807,8 @@ function Personal({
           }} />
 
           <div className="flex flex-col justify-center">
-            <h3 className="text-[#2C1D12] font-extrabold text-base tracking-tight">Upload photo</h3>
-            <p className="text-[11px] text-[#EA580C] font-semibold mt-1 uppercase tracking-wider">JPG, PNG (Max 5MB)</p>
+            <h3 className="text-white font-extrabold text-base tracking-tight">Upload Profile Photo</h3>
+            <p className="text-[11px] text-orange-400 font-semibold mt-0.5 uppercase tracking-wider">JPG, PNG (Max 5MB)</p>
           </div>
         </label>
       </div>
@@ -883,10 +819,10 @@ function Personal({
       </div>
 
       <div className="w-full">
-        <span className="text-[10px] font-bold text-[#EA580C] uppercase tracking-wider block mb-1.5 ml-1">Gender</span>
-        <div className="flex items-center w-full p-1 bg-white/60 border border-[#E6D9C8] rounded-2xl shadow-xs">
-          {["Male", "Female", "Other"].map(g => (
-            <button key={g} type="button" onClick={() => onChange("gender", g)} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${data.gender === g ? "bg-gradient-to-r from-[#F25C05] to-[#FFA74D] text-white shadow-sm" : "text-[#7A6455]/70 hover:bg-orange-50/50 hover:text-[#2C1D12]"}`}>
+        <span className="text-[11px] font-extrabold text-orange-400 uppercase tracking-wider block mb-2">Gender</span>
+        <div className="flex items-center w-full p-1 bg-white/10 border border-white/20 rounded-2xl shadow-md backdrop-blur-md">
+          {["Male", "Female"].map(g => (
+            <button key={g} type="button" onClick={() => onChange("gender", g)} className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all duration-300 ${data.gender === g ? "bg-gradient-to-r from-[#F25C05] to-[#FFA74D] text-white shadow-lg shadow-orange-500/40" : "text-white/70 hover:bg-white/10 hover:text-white"}`}>
               {g}
             </button>
           ))}
@@ -928,7 +864,7 @@ function Personal({
           suffix={
             <button
               type="button"
-              className="p-1 rounded-md text-[#7A6455] hover:text-[#EA580C] hover:bg-orange-50 transition-colors pointer-events-auto"
+              className="p-1 rounded-md text-orange-300 hover:text-white hover:bg-white/10 transition-colors pointer-events-auto"
               onClick={() => setShowPwd(!showPwd)}
             >
               {showPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -937,7 +873,7 @@ function Personal({
         />
         {data.password && (() => {
           const getPasswordStrength = (pwd: string) => {
-            if (!pwd) return { score: 0, label: "", color: "bg-stone-200", text: "text-stone-500" };
+            if (!pwd) return { score: 0, label: "", color: "bg-white/20", text: "text-white/40" };
             let score = 0;
             if (pwd.length >= 8) score++;
             if (/[A-Z]/.test(pwd)) score++;
@@ -945,18 +881,18 @@ function Personal({
             if (/\d/.test(pwd)) score++;
             if (/[@$!%*?&]/.test(pwd)) score++;
 
-            if (score <= 2) return { score, label: "Weak", color: "bg-red-500", text: "text-red-500" };
-            if (score <= 4) return { score, label: "Medium", color: "bg-amber-500", text: "text-amber-500" };
-            return { score, label: "Strong", color: "bg-green-500", text: "text-green-500" };
+            if (score <= 2) return { score, label: "Weak", color: "bg-red-500", text: "text-red-400" };
+            if (score <= 4) return { score, label: "Medium", color: "bg-amber-500", text: "text-amber-400" };
+            return { score, label: "Strong", color: "bg-emerald-500", text: "text-emerald-400" };
           };
           const strObj = getPasswordStrength(data.password);
           return (
             <div className="mt-2 px-1">
               <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider mb-1">
-                <span className="text-[#7A6455]">Password Strength</span>
+                <span className="text-white/70">Password Strength</span>
                 <span className={strObj.text}>{strObj.label}</span>
               </div>
-              <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                 <div
                   className={`h-full transition-all duration-300 ${strObj.color}`}
                   style={{ width: `${(strObj.score / 5) * 100}%` }}
@@ -1124,13 +1060,13 @@ function LocationStep({ data, onChange }: { data: any; onChange: (key: string, v
         <BlobSelect label="Village" options={villageOptions} value={data.village} onChange={handleVillageChange} />
       )}
 
-      <div className="bg-white/60 hover:bg-white/80 border border-[#E6D9C8] rounded-2xl p-3 px-4 transition-all focus-within:ring-2 focus-within:ring-orange-500/10 focus-within:border-[#EA580C] focus-within:bg-white w-full">
-        <span className="text-[10px] font-bold text-[#EA580C] uppercase tracking-wider block leading-tight">
+      <div className="bg-white/10 hover:bg-white/15 border border-white/20 rounded-2xl p-3.5 px-4 transition-all focus-within:ring-2 focus-within:ring-orange-500/30 focus-within:border-orange-500 focus-within:bg-white/15 w-full backdrop-blur-md shadow-md">
+        <span className="text-[10px] font-extrabold text-orange-300 uppercase tracking-wider block leading-tight">
           Full Address
         </span>
         <textarea
           rows={2}
-          className="w-full bg-transparent border-none outline-none text-sm text-[#2C1D12] font-bold p-0 focus:ring-0 mt-1 resize-none"
+          className="w-full bg-transparent border-none outline-none text-sm text-white font-bold p-0 focus:ring-0 mt-1 resize-none placeholder:text-white/40"
           placeholder="Enter your full home address"
           value={data.address}
           onChange={(e: any) => onChange("address", e.target.value)}
@@ -1227,13 +1163,13 @@ function Profession({
     <div className="space-y-5">
       {/* Profession Type Toggle */}
       <div className="relative w-full">
-        <span className="text-[11px] font-bold text-[#EA580C] uppercase tracking-wider block mb-2">Profession Type</span>
-        <div className="flex items-center w-full p-1 bg-white border border-[#E6D9C8] rounded-full shadow-sm">
+        <span className="text-[11px] font-extrabold text-orange-400 uppercase tracking-wider block mb-2">Profession Type</span>
+        <div className="flex items-center w-full p-1 bg-white/10 border border-white/20 rounded-full shadow-sm backdrop-blur-md">
           {(["Job", "Business"] as const).map(x => (
             <button key={x} type="button" onClick={() => onChange("professionType", x)}
               className={`flex-1 py-2 rounded-full text-xs font-bold transition-all duration-300 ${data.professionType === x
-                  ? "bg-gradient-to-r from-[#F25C05] to-[#FFA74D] text-white shadow-sm"
-                  : "text-[#7A6455] hover:bg-orange-50 hover:text-orange-900"
+                  ? "bg-gradient-to-r from-[#F25C05] to-[#FFA74D] text-white shadow-md shadow-orange-500/30"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
                 }`}>
               {x}
             </button>
@@ -1285,8 +1221,8 @@ function Profession({
 
             {/* Job Location Section Header */}
             <div className="sm:col-span-2">
-              <span className="text-[11px] font-bold text-[#EA580C] uppercase tracking-wider block mb-0">Job Location</span>
-              <div className="h-px bg-orange-100 mt-1" />
+              <span className="text-[11px] font-extrabold text-orange-400 uppercase tracking-wider block mb-0">Job Location</span>
+              <div className="h-px bg-white/20 mt-1" />
             </div>
 
             {/* Row 4: Job City + Job State */}
@@ -1300,11 +1236,11 @@ function Profession({
               value={data.jobCountry || "India"}
               onChange={(val: string) => onChange("jobCountry", val)}
             />
-            <div className="bg-white/60 hover:bg-white/80 border border-[#E6D9C8] rounded-2xl p-3 px-4 transition-all focus-within:ring-2 focus-within:ring-orange-500/10 focus-within:border-[#EA580C] focus-within:bg-white w-full">
-              <span className="text-[10px] font-bold text-[#EA580C] uppercase tracking-wider block leading-tight">Job Address</span>
+            <div className="bg-white/10 hover:bg-white/15 border border-white/20 rounded-2xl p-3.5 px-4 transition-all focus-within:ring-2 focus-within:ring-orange-500/30 focus-within:border-orange-500 focus-within:bg-white/15 w-full backdrop-blur-md shadow-md">
+              <span className="text-[10px] font-extrabold text-orange-300 uppercase tracking-wider block leading-tight">Job Address</span>
               <textarea
                 rows={2}
-                className="w-full bg-transparent border-none outline-none text-sm text-[#2C1D12] font-bold p-0 focus:ring-0 mt-1 resize-none"
+                className="w-full bg-transparent border-none outline-none text-sm text-white font-bold p-0 focus:ring-0 mt-1 resize-none placeholder:text-white/40"
                 placeholder="Office / workplace full address"
                 value={data.jobAddress || ""}
                 onChange={(e: any) => onChange("jobAddress", e.target.value)}
@@ -1315,12 +1251,12 @@ function Profession({
         ) : (
           <motion.div key="business" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
             {/* Sub-tabs */}
-            <div className="flex gap-1 bg-orange-50/60 border border-[#E6D9C8] rounded-2xl p-1">
+            <div className="flex gap-1 bg-white/10 border border-white/20 rounded-2xl p-1 backdrop-blur-md">
               {(["basic", "contact", "hours"] as const).map(tab => (
                 <button key={tab} type="button" onClick={() => setBizTab(tab)}
                   className={`flex-1 py-2 rounded-xl text-[11px] font-bold transition-all ${bizTab === tab
-                      ? "bg-gradient-to-r from-[#F25C05] to-[#FFA74D] text-white shadow-sm"
-                      : "text-[#7A6455] hover:text-[#EA580C]"
+                      ? "bg-gradient-to-r from-[#F25C05] to-[#FFA74D] text-white shadow-md shadow-orange-500/30"
+                      : "text-white/70 hover:text-white"
                     }`}>
                   {tab === "basic" ? "Basic Info" : tab === "contact" ? "Contact & Location" : "Hours & Socials"}
                 </button>
@@ -1338,16 +1274,16 @@ function Profession({
                 </div>
                 {/* Business Logo upload */}
                 <div>
-                  <span className="text-[11px] font-bold text-[#EA580C] uppercase tracking-wider block mb-2">Business Logo</span>
-                  <label className="flex items-center gap-4 border border-dashed border-[#E6D9C8] hover:border-orange-400 bg-white/50 rounded-2xl p-4 cursor-pointer transition-all group">
-                    <div className="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center border border-orange-100 overflow-hidden shrink-0">
+                  <span className="text-[11px] font-extrabold text-orange-400 uppercase tracking-wider block mb-2">Business Logo</span>
+                  <label className="flex items-center gap-4 border border-dashed border-white/30 hover:border-orange-400 bg-white/10 rounded-2xl p-4 cursor-pointer transition-all group backdrop-blur-md">
+                    <div className="w-14 h-14 rounded-xl bg-orange-500/20 flex items-center justify-center border border-orange-400/40 overflow-hidden shrink-0">
                       {data.businessLogo
                         ? <img src={data.businessLogo} alt="" className="w-full h-full object-cover" />
-                        : <Upload className="w-5 h-5 text-[#EA580C]" />}
+                        : <Upload className="w-5 h-5 text-orange-400" />}
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-[#2C1D12]">{data.businessLogo ? "Logo selected ✓" : "Upload Business Logo"}</div>
-                      <div className="text-[11px] text-[#7A6455] font-semibold mt-0.5">PNG, JPG (square, max 2MB)</div>
+                      <div className="text-sm font-bold text-white">{data.businessLogo ? "Logo selected ✓" : "Upload Business Logo"}</div>
+                      <div className="text-[11px] text-white/60 font-semibold mt-0.5">PNG, JPG (square, max 2MB)</div>
                     </div>
                     <input type="file" accept="image/*" className="hidden" onChange={e => {
                       const f = e.target.files?.[0];
@@ -1360,11 +1296,11 @@ function Profession({
                 </div>
                 {/* Business Gallery Photos */}
                 <div>
-                  <span className="text-[11px] font-bold text-[#EA580C] uppercase tracking-wider block mb-2">Business Photos (Gallery)</span>
-                  <label className="flex flex-col items-center justify-center border border-dashed border-[#E6D9C8] hover:border-orange-400 bg-white/50 rounded-2xl p-6 cursor-pointer transition-all group">
-                    <Upload className="w-6 h-6 text-[#EA580C] mb-2 group-hover:scale-110 transition-transform" />
-                    <div className="text-sm font-bold text-[#2C1D12]">Select Business Photos</div>
-                    <div className="text-[11px] text-[#7A6455] font-semibold mt-0.5">PNG, JPG (up to 10 photos, max 2MB each)</div>
+                  <span className="text-[11px] font-extrabold text-orange-400 uppercase tracking-wider block mb-2">Business Photos (Gallery)</span>
+                  <label className="flex flex-col items-center justify-center border border-dashed border-white/30 hover:border-orange-400 bg-white/10 rounded-2xl p-6 cursor-pointer transition-all group backdrop-blur-md">
+                    <Upload className="w-6 h-6 text-orange-400 mb-2 group-hover:scale-110 transition-transform" />
+                    <div className="text-sm font-bold text-white">Select Business Photos</div>
+                    <div className="text-[11px] text-white/60 font-semibold mt-0.5">PNG, JPG (up to 10 photos, max 2MB each)</div>
                     <input type="file" multiple accept="image/*" className="hidden" onChange={handleGalleryChange} />
                   </label>
 
@@ -1372,10 +1308,10 @@ function Profession({
                   {galleryPreviews.length > 0 && (
                     <div className="grid grid-cols-5 gap-2 mt-3">
                       {galleryPreviews.map((src, idx) => (
-                        <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-[#E6D9C8] bg-orange-50 group">
+                        <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-white/20 bg-black/40 group">
                           <img src={src} alt="" className="w-full h-full object-cover" />
                           <button type="button" onClick={() => removeGalleryPhoto(idx)}
-                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white rounded-xl">
+                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white rounded-xl">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -1384,10 +1320,10 @@ function Profession({
                   )}
                 </div>
                 {/* Description */}
-                <div className="bg-white/60 border border-[#E6D9C8] rounded-2xl p-3 px-4 focus-within:border-[#EA580C] focus-within:bg-white transition-all">
-                  <span className="text-[10px] font-bold text-[#EA580C] uppercase tracking-wider block mb-1">Public Description</span>
+                <div className="bg-white/10 hover:bg-white/15 border border-white/20 rounded-2xl p-3.5 px-4 focus-within:border-orange-500 focus-within:bg-white/15 transition-all backdrop-blur-md">
+                  <span className="text-[10px] font-extrabold text-orange-300 uppercase tracking-wider block mb-1">Public Description</span>
                   <textarea rows={3} value={data.businessDesc} onChange={e => onChange("businessDesc", e.target.value)}
-                    className="w-full bg-transparent border-none outline-none text-sm text-[#2C1D12] font-bold resize-none focus:ring-0"
+                    className="w-full bg-transparent border-none outline-none text-sm text-white font-bold resize-none focus:ring-0 placeholder:text-white/40"
                     placeholder="Briefly describe your products & services..."
                   />
                 </div>
@@ -1401,10 +1337,10 @@ function Profession({
                 <BlobInput label="WhatsApp Number" type="tel" icon={Phone} value={data.businessWhatsapp} onChange={(e: any) => onChange("businessWhatsapp", e.target.value)} placeholder="" />
                 <BlobInput label="Business Email" type="email" icon={Mail} value={data.businessEmail} onChange={(e: any) => onChange("businessEmail", e.target.value)} placeholder="" />
                 <BlobInput label="Website URL" type="url" icon={Globe} value={data.businessWebsite} onChange={(e: any) => onChange("businessWebsite", e.target.value)} placeholder="" />
-                <div className="sm:col-span-2 bg-white/60 border border-[#E6D9C8] rounded-2xl p-3 px-4 focus-within:border-[#EA580C] focus-within:bg-white transition-all">
-                  <span className="text-[10px] font-bold text-[#EA580C] uppercase tracking-wider block mb-1">Business Address</span>
+                <div className="sm:col-span-2 bg-white/10 hover:bg-white/15 border border-white/20 rounded-2xl p-3.5 px-4 focus-within:border-orange-500 focus-within:bg-white/15 transition-all backdrop-blur-md">
+                  <span className="text-[10px] font-extrabold text-orange-300 uppercase tracking-wider block mb-1">Business Address</span>
                   <textarea rows={2} value={data.businessAddress} onChange={e => onChange("businessAddress", e.target.value)}
-                    className="w-full bg-transparent border-none outline-none text-sm text-[#2C1D12] font-bold resize-none focus:ring-0"
+                    className="w-full bg-transparent border-none outline-none text-sm text-white font-bold resize-none focus:ring-0 placeholder:text-white/40"
                     placeholder="Street, Area, Landmark..."
                   />
                 </div>
@@ -1418,7 +1354,7 @@ function Profession({
             {bizTab === "hours" && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-[#EA580C] uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-[11px] font-extrabold text-orange-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5" /> Operating Hours
                   </span>
                   {DAYS.map(day => {
@@ -1426,31 +1362,31 @@ function Profession({
                     const isClosed = val === "Closed";
                     const isAllDay = val === "Open 24 Hours";
                     return (
-                      <div key={day} className="flex items-center gap-2 bg-white/60 border border-[#E6D9C8] rounded-xl px-3 py-2">
-                        <span className="text-[11px] font-bold text-[#2C1D12] w-24 shrink-0">{day}</span>
+                      <div key={day} className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-3 py-2 backdrop-blur-md">
+                        <span className="text-[11px] font-bold text-white w-24 shrink-0">{day}</span>
                         <select value={isClosed ? "Closed" : isAllDay ? "Open 24 Hours" : "custom"}
                           onChange={e => {
                             if (e.target.value === "Closed") updateHours(day, "Closed");
                             else if (e.target.value === "Open 24 Hours") updateHours(day, "Open 24 Hours");
                             else updateHours(day, "09:00 AM - 07:00 PM");
                           }}
-                          className="text-[11px] bg-orange-50 border border-orange-200 rounded-lg px-2 py-1 font-bold text-[#EA580C] focus:outline-none">
-                          <option value="Closed">Closed</option>
-                          <option value="Open 24 Hours">Open 24 Hours</option>
-                          <option value="custom">Custom Hours</option>
+                          className="text-[11px] bg-orange-500/20 border border-orange-400/40 rounded-lg px-2 py-1 font-bold text-orange-300 focus:outline-none">
+                          <option value="Closed" className="bg-[#1C100B] text-white">Closed</option>
+                          <option value="Open 24 Hours" className="bg-[#1C100B] text-white">Open 24 Hours</option>
+                          <option value="custom" className="bg-[#1C100B] text-white">Custom Hours</option>
                         </select>
                         {!isClosed && !isAllDay && (
                           <>
                             <select value={parseHour(val, "open")}
                               onChange={e => setHourPart(day, "open", e.target.value)}
-                              className="text-[11px] bg-white border border-[#E6D9C8] rounded-lg px-2 py-1 font-semibold text-[#2C1D12] focus:outline-none flex-1">
+                              className="text-[11px] bg-[#1C100B] border border-white/20 rounded-lg px-2 py-1 font-semibold text-white focus:outline-none flex-1">
                               <option value="">Open</option>
                               {TIME_OPTIONS.filter(t => t !== "Closed" && t !== "Open 24 Hours").map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
-                            <span className="text-[11px] text-[#7A6455] font-bold">–</span>
+                            <span className="text-[11px] text-white/60 font-bold">–</span>
                             <select value={parseHour(val, "close")}
                               onChange={e => setHourPart(day, "close", e.target.value)}
-                              className="text-[11px] bg-white border border-[#E6D9C8] rounded-lg px-2 py-1 font-semibold text-[#2C1D12] focus:outline-none flex-1">
+                              className="text-[11px] bg-[#1C100B] border border-white/20 rounded-lg px-2 py-1 font-semibold text-white focus:outline-none flex-1">
                               <option value="">Close</option>
                               {TIME_OPTIONS.filter(t => t !== "Closed" && t !== "Open 24 Hours").map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
@@ -1462,7 +1398,7 @@ function Profession({
                 </div>
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-bold text-[#EA580C] uppercase tracking-wider block">Social Media Links</span>
+                  <span className="text-[11px] font-extrabold text-orange-400 uppercase tracking-wider block">Social Media Links</span>
                   <BlobInput label="Instagram" icon={Instagram} value={data.businessInstagram} onChange={(e: any) => onChange("businessInstagram", e.target.value)} placeholder="" />
                   <BlobInput label="Facebook" icon={Facebook} value={data.businessFacebook} onChange={(e: any) => onChange("businessFacebook", e.target.value)} placeholder="" />
                   <BlobInput label="YouTube" icon={Youtube} value={data.businessYoutube} onChange={(e: any) => onChange("businessYoutube", e.target.value)} placeholder="" />
@@ -1504,48 +1440,48 @@ function Community({ data, onChange, communities }: { data: any; onChange: (key:
       <BlobSelect label="Select Community" options={options.length > 0 ? options : [{ value: "1", label: "Rampara Ahir Samaj" }]} value={data.communityId || (communities[0]?.id.toString() || "1")} onChange={handleCommunityChange} />
 
       {/* Warning banner to guide community selection */}
-      <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl flex items-start gap-3 text-xs text-amber-800">
-        <svg className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+      <div className="p-4 bg-amber-500/15 border border-amber-400/30 rounded-2xl flex items-start gap-3 text-xs text-amber-200 backdrop-blur-md">
+        <svg className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
         <span><strong>Important:</strong> Make sure you select the <strong>exact community</strong> you belong to. Selecting the wrong community will delay your approval.</span>
       </div>
 
       {/* Selected community card with hierarchy */}
       {selectedCommunity && (
-        <div className="p-5 bg-orange-50/50 backdrop-blur-sm border border-orange-200 rounded-2xl shadow-sm">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-[#EA580C] mb-3">✅ Your Selected Community</div>
+        <div className="p-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-sm">
+          <div className="text-[10px] uppercase tracking-wider font-extrabold text-orange-400 mb-3">✅ Your Selected Community</div>
 
           {/* Hierarchy breadcrumb */}
           <div className="flex flex-wrap items-center gap-1 mb-3">
             {pathArr.map((node, i) => (
               <span key={i} className="flex items-center gap-1">
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${i === pathArr.length - 1 ? "bg-[#EA580C] text-white border-[#EA580C]" : "bg-orange-100/70 text-[#EA580C] border-orange-200"}`}>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${i === pathArr.length - 1 ? "bg-[#EA580C] text-white border-[#EA580C]" : "bg-orange-500/20 text-orange-300 border-orange-400/40"}`}>
                   {node}
                 </span>
-                {i < pathArr.length - 1 && <span className="text-orange-300 font-bold">→</span>}
+                {i < pathArr.length - 1 && <span className="text-orange-400 font-bold">→</span>}
               </span>
             ))}
           </div>
 
           {/* Community details */}
-          <div className="grid grid-cols-2 gap-2 text-[11px] text-[#7A6455]">
+          <div className="grid grid-cols-2 gap-2 text-[11px] text-white/80">
             {selectedCommunity.state && (
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-[#EA580C]">State:</span> {selectedCommunity.state}
+                <span className="font-bold text-orange-400">State:</span> {selectedCommunity.state}
               </div>
             )}
             {selectedCommunity.district && (
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-[#EA580C]">District:</span> {selectedCommunity.district}
+                <span className="font-bold text-orange-400">District:</span> {selectedCommunity.district}
               </div>
             )}
             {selectedCommunity.type && (
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-[#EA580C]">Type:</span> {selectedCommunity.type}
+                <span className="font-bold text-orange-400">Type:</span> {selectedCommunity.type}
               </div>
             )}
             {selectedCommunity.plan && (
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-[#EA580C]">Plan:</span> {selectedCommunity.plan}
+                <span className="font-bold text-orange-400">Plan:</span> {selectedCommunity.plan}
               </div>
             )}
           </div>
@@ -1567,13 +1503,13 @@ function Verify({
       <BlobInput label="Aadhaar Number" placeholder="" value={data.aadhaarNo} onChange={(e: any) => onChange("aadhaarNo", e.target.value)} />
 
       <div className="relative w-full pt-4">
-        <span className="text-[11px] font-bold text-[#EA580C] uppercase tracking-wider block mb-2">Aadhaar Card Copy</span>
-        <label className="block border-2 border-dashed border-[#E6D9C8] hover:border-orange-400 bg-white/50 backdrop-blur-sm p-8 text-center cursor-pointer transition-all rounded-2xl group shadow-sm">
-          <div className="w-12 h-12 rounded-full bg-orange-50 mx-auto flex items-center justify-center mb-3 group-hover:bg-orange-100 transition-colors">
-            <Upload className="w-5 h-5 text-[#EA580C]" />
+        <span className="text-[11px] font-extrabold text-orange-400 uppercase tracking-wider block mb-2">Aadhaar Card Copy</span>
+        <label className="block border-2 border-dashed border-white/30 hover:border-orange-400 bg-white/10 backdrop-blur-md p-8 text-center cursor-pointer transition-all rounded-2xl group shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-orange-500/20 mx-auto flex items-center justify-center mb-3 group-hover:bg-orange-500/30 transition-colors">
+            <Upload className="w-5 h-5 text-orange-400" />
           </div>
-          <div className="text-sm font-bold text-[#2C1D12]">{data.aadhaarPhoto ? `Selected: ${data.aadhaarPhoto}` : "Upload Aadhaar Photo"}</div>
-          <div className="text-[11px] font-semibold text-[#EA580C] uppercase tracking-wider mt-1">{data.aadhaarPhoto ? "Click to replace" : "PDF, JPG or PNG (max 5MB)"}</div>
+          <div className="text-sm font-bold text-white">{data.aadhaarPhoto ? `Selected: ${data.aadhaarPhoto}` : "Upload Aadhaar Photo"}</div>
+          <div className="text-[11px] font-semibold text-orange-400 uppercase tracking-wider mt-1">{data.aadhaarPhoto ? "Click to replace" : "PDF, JPG or PNG (max 5MB)"}</div>
           <input type="file" className="hidden" onChange={e => {
             const f = e.target.files?.[0];
             if (f) {
@@ -1584,9 +1520,9 @@ function Verify({
         </label>
       </div>
 
-      <label className="flex items-start gap-3 text-xs font-semibold text-[#7A6455] cursor-pointer ml-1 mt-6">
-        <input type="checkbox" className="mt-0.5 accent-[#EA580C] w-4 h-4 rounded border-[#E6D9C8]" />
-        <span>I confirm that all details provided are correct to the best of my knowledge and I accept the <span className="text-[#EA580C] font-bold hover:underline">Terms of Service</span>.</span>
+      <label className="flex items-start gap-3 text-xs font-semibold text-white/80 cursor-pointer ml-1 mt-6">
+        <input type="checkbox" className="mt-0.5 accent-[#EA580C] w-4 h-4 rounded border-white/30" />
+        <span>I confirm that all details provided are correct to the best of my knowledge and I accept the <span className="text-orange-400 font-bold hover:underline">Terms of Service</span>.</span>
       </label>
     </div>
   );

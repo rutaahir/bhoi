@@ -39,4 +39,4 @@ print("=" * 60)
 print()
 
 # Run manage.py
-subprocess.run([python_exe, '-u', 'manage.py', 'runserver', '0.0.0.0:8000'])
+subprocess.run([python_exe, '-u', 'manage.py', 'runserver', '127.0.0.1:8000'])

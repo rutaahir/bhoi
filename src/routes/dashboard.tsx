@@ -187,12 +187,15 @@ function DashLayout() {
       <MobileHeader title="Member Panel" items={updatedItems} />
       <div className="flex flex-1 w-full">
         <DashboardSidebar items={updatedItems} title="Member" />
-        <div className="flex-1 min-w-0 pb-6 md:pb-0">
+        <div className="flex-1 min-w-0 pb-20 lg:pb-0">
           <AccessGuard>
             <Outlet />
           </AccessGuard>
         </div>
+
       </div>
+      <MobileBottomNav items={updatedItems} />
     </div>
   );
 }
+

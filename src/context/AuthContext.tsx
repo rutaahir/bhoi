@@ -77,7 +77,7 @@ export const DEMO_USERS: Record<Role, User> = {
   super_admin: {
     id: "u3", name: "Admin Desai", role: "super_admin", email: "admin@weareunited.in",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
-    communityName: "WE ARE UNITED Platform", plan: "Enterprise", planExpiry: "2027-12-31",
+    communityName: "BHOI Platform", plan: "Enterprise", planExpiry: "2027-12-31",
   },
 };
 

@@ -1,4 +1,4 @@
-﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -30,7 +30,7 @@ import {
 import { PageTransition, Modal, AvatarCircle } from "@/components/wag/primitives";
 
 export const Route = createFileRoute("/register/community")({
-  head: () => ({ meta: [{ title: "Register your Samaj — WE ARE UNITED" }] }),
+  head: () => ({ meta: [{ title: "Register your Samaj — BHOI" }] }),
   component: CommReg,
 });
 
@@ -63,17 +63,22 @@ function CommReg() {
 
   // Load draft states from sessionStorage if available
   const [step, setStep] = useState(() => {
-    const saved = sessionStorage.getItem("reg_community_step");
-    return saved ? parseInt(saved, 10) : 0;
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      const saved = sessionStorage.getItem("reg_community_step");
+      return saved ? parseInt(saved, 10) : 0;
+    }
+    return 0;
   });
   const [showParentModal, setShowParentModal] = useState(false);
   const [selectedParentId, setSelectedParentId] = useState(() => {
-    const saved = sessionStorage.getItem("reg_community_draft");
-    if (saved) {
-      try {
-        const d = JSON.parse(saved);
-        return d.parentId || "";
-      } catch (e) { }
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      const saved = sessionStorage.getItem("reg_community_draft");
+      if (saved) {
+        try {
+          const d = JSON.parse(saved);
+          return d.parentId || "";
+        } catch (e) { }
+      }
     }
     return "";
   });
@@ -85,9 +90,11 @@ function CommReg() {
   const [otp, setOtp] = useState("");
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [createdCommunityInfo, setCreatedCommunityInfo] = useState<any | null>(() => {
-    const saved = sessionStorage.getItem("wag_registered_community");
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { }
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      const saved = sessionStorage.getItem("wag_registered_community");
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) { }
+      }
     }
     return null;
   });
@@ -97,16 +104,20 @@ function CommReg() {
   const coverFileRef = useRef<File | null>(null);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
   }, [step]);
 
   // Form State
   const [formData, setFormData] = useState(() => {
-    const saved = sessionStorage.getItem("reg_community_draft");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) { }
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      const saved = sessionStorage.getItem("reg_community_draft");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) { }
+      }
     }
     return {
       name: "",
@@ -143,30 +154,39 @@ function CommReg() {
   });
 
   const [committee, setCommittee] = useState<CommitteeMember[]>(() => {
-    const saved = sessionStorage.getItem("reg_committee");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) { }
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      const saved = sessionStorage.getItem("reg_committee");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) { }
+      }
     }
     return [];
   });
 
   // Save changes to sessionStorage
   useEffect(() => {
-    sessionStorage.setItem("reg_community_draft", JSON.stringify(formData));
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem("reg_community_draft", JSON.stringify(formData));
+    }
   }, [formData]);
 
   useEffect(() => {
-    sessionStorage.setItem("reg_community_step", step.toString());
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem("reg_community_step", step.toString());
+    }
   }, [step]);
 
   useEffect(() => {
-    sessionStorage.setItem("reg_committee", JSON.stringify(committee));
+    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem("reg_committee", JSON.stringify(committee));
+    }
   }, [committee]);
 
   // SPA Navigation vs Browser Reload handler
   useEffect(() => {
+    if (typeof window === "undefined") return;
     let isUnloading = false;
     const handleUnload = () => {
       isUnloading = true;
@@ -175,9 +195,7 @@ function CommReg() {
 
     return () => {
       window.removeEventListener("beforeunload", handleUnload);
-      // If we are unmounting without a browser reload, it means the user clicked away
-      // to another page in the app. Clean up draft!
-      if (!isUnloading) {
+      if (!isUnloading && typeof sessionStorage !== "undefined") {
         sessionStorage.removeItem("reg_community_draft");
         sessionStorage.removeItem("reg_community_step");
         sessionStorage.removeItem("reg_committee");

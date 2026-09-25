@@ -5,7 +5,7 @@ import { AnimatedCard } from "@/components/wag/primitives";
 import { 
   Settings, Globe, CreditCard, Mail, Bell, Shield, Palette, Database, Check, 
   Cpu, RefreshCw, PlusCircle, Copy, Archive, Power, ChevronUp, ChevronDown, 
-  Trash2, Edit, Search, Filter, AlertTriangle, Sparkles
+  Trash2, Edit, Search, Filter, AlertTriangle, Sparkles, KeyRound, Lock
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -295,9 +295,9 @@ function Body() {
           {tab === "general" && (
             <Section icon={<Globe className="w-5 h-5" />} title="General" desc="Platform-wide identity and locale">
               <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="Platform name"><input defaultValue="WE ARE UNITED" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
-                <Field label="Tagline"><input defaultValue="Aapni Samaj, Aapnu Network" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
-                <Field label="Support email"><input defaultValue="support@weareunited.in" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
+                <Field label="Platform name"><input defaultValue="BHOI" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
+                <Field label="Tagline"><input defaultValue="Connect. Empower. Grow." className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
+                <Field label="Support email"><input defaultValue="support@bhoi.in" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
                 <Field label="Timezone"><select defaultValue="IST" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground"><option>IST (UTC+5:30)</option><option>UTC</option><option>EST</option></select></Field>
                 <Field label="Default language"><select defaultValue="en" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground"><option value="en">English</option><option value="hi">हिन्दी</option><option value="gu">ગુજરાતી</option></select></Field>
                 <Field label="Currency"><select defaultValue="INR" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground"><option>INR (₹)</option><option>USD ($)</option></select></Field>
@@ -328,10 +328,10 @@ function Body() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="SMTP host"><input defaultValue="smtp.sendgrid.net" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
                 <Field label="SMTP port"><input defaultValue="587" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
-                <Field label="From name"><input defaultValue="WE ARE UNITED" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
-                <Field label="From email"><input defaultValue="no-reply@weareunited.in" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
+                <Field label="From name"><input defaultValue="BHOI" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
+                <Field label="From email"><input defaultValue="no-reply@bhoi.in" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
                 <Field label="SMS provider"><select className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground"><option>MSG91</option><option>Twilio</option><option>Gupshup</option></select></Field>
-                <Field label="Sender ID"><input defaultValue="WEAREUNITED" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
+                <Field label="Sender ID"><input defaultValue="BHOI" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
               </div>
             </Section>
           )}
@@ -346,9 +346,39 @@ function Body() {
           )}
 
           {tab === "security" && (
-            <Section icon={<Shield className="w-5 h-5" />} title="Security">
+            <Section icon={<Shield className="w-5 h-5" />} title="Security & Site Access Lock">
               <Toggle on={toggles.twoFA} onChange={() => T("twoFA")} label="Require 2FA for admins" desc="All Super Admin and Platform Manager accounts" />
               <Toggle on={toggles.audit} onChange={() => T("audit")} label="Audit logging" desc="Record every admin action with IP and timestamp" />
+              
+              {/* Site Protection Password Control */}
+              <div className="p-4 rounded-xl bg-orange-50/50 border border-orange-200/80 space-y-3 mt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm text-foreground">Website Password Gate (.env Protected)</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">ENV Configured</span>
+                </div>
+                <p className="text-xs text-warm-muted leading-relaxed">
+                  Site password is configured in your <code className="bg-sand px-1.5 py-0.5 rounded font-mono text-[#F97316]">.env</code> file via <code className="bg-sand px-1.5 py-0.5 rounded font-mono text-[#F97316]">VITE_SITE_ACCESS_PASSWORD</code>.
+                </p>
+                <div className="flex items-center justify-between pt-1 border-t border-orange-200/60">
+                  <span className="text-xs font-medium text-warm-muted">Want to test lock screen again?</span>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      localStorage.removeItem("site_access_unlocked");
+                      sessionStorage.removeItem("site_access_unlocked");
+                      window.location.reload();
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    Lock Website Now
+                  </button>
+                </div>
+              </div>
+
               <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-warm">
                 <Field label="Session timeout (mins)"><input defaultValue="60" type="number" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>
                 <Field label="Max login attempts"><input defaultValue="5" type="number" className="w-full px-3 py-2 rounded-lg border border-warm bg-surface text-sm text-foreground" /></Field>

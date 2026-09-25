@@ -1005,7 +1005,7 @@ function MemberPropertyBooking() {
                         <p className="text-[10px] font-bold text-warm-muted uppercase tracking-wider">Submit Payment Proof</p>
                         <div className="bg-sand/5 p-4 rounded-xl border space-y-2 text-xs text-warm-muted">
                           <p><strong>UPI ID:</strong> community@upi</p>
-                          <p><strong>Bank Details:</strong> we Are United Samaj | A/C: 1234567890 | IFSC: SBIN000123</p>
+                          <p><strong>Bank Details:</strong> Bhoi Samaj | A/C: 1234567890 | IFSC: SBIN000123</p>
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs font-semibold">Transaction Reference ID (UTR)</Label>

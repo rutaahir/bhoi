@@ -15,6 +15,7 @@ import { COMMUNITIES, EVENTS, MATRIMONY, BUSINESSES, JOBS, NEWS } from "@/data/m
 import { api, getImageUrl } from "@/lib/api";
 import heroBg from "@/assets/hero-bg.png";
 import { toast } from "sonner";
+import { MobileBottomNav, type SidebarItem } from "@/components/wag/Sidebar";
 
 type SearchParams = {
   page?: string;
@@ -28,9 +29,9 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "WE ARE UNITED — Apni Samaj, Apna Network" },
+      { title: "BHOI — Connect. Empower. Grow." },
       { name: "description", content: "Community ERP and social network for Indian samaj communities — manage members, events, matrimony, jobs and donations on one platform." },
-      { property: "og:title", content: "WE ARE UNITED — Connect Your Samaj Digitally" },
+      { property: "og:title", content: "BHOI — Connect Your Samaj Digitally" },
     ]
   }),
   component: DashboardStyleHome,
@@ -39,9 +40,9 @@ export const Route = createFileRoute("/")({
 const sidebarItems = [
   { label: "Dashboard", icon: LayoutDashboard },
   { label: "Samachar", icon: Newspaper },
-  { label: "Communities", icon: Building2 },
   { label: "Matrimony", icon: Heart },
   { label: "Jobs", icon: Briefcase },
+  { label: "Communities", icon: Building2 },
   { label: "Events", icon: Calendar },
   { label: "Directory", icon: Users },
   { label: "Business Directory", icon: Building2 },
@@ -50,6 +51,7 @@ const sidebarItems = [
   { label: "Videos", icon: Video },
   { label: "Documents", icon: FileText }
 ];
+
 
 const BIZ_CATEGORIES = [
   "All", "Food & Bakery", "Manufacturing", "Jewellery", "Healthcare",
@@ -701,7 +703,7 @@ function DashboardStyleHome() {
 
 
   return (
-    <div className="min-h-screen flex bg-[#FFF5EE] text-[#3E2723] font-sans antialiased overflow-hidden h-screen">
+    <div className="min-h-screen flex bg-[#FFF5EE] text-[#3E2723] font-sans antialiased overflow-x-hidden lg:h-screen w-full min-w-0">
       {/* 1. Left Sidebar Navigation */}
       <aside className="w-[240px] flex-shrink-0 border-r border-[#EBE3DB] bg-[#FAF3EC] flex flex-col justify-between p-4 sticky top-0 h-screen hidden lg:flex z-20">
         <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-160px)] pr-1">
@@ -718,8 +720,8 @@ function DashboardStyleHome() {
               <path d="M14 19 L18 23 L26 14" fill="none" stroke="#FFF5EE" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <div className="leading-tight text-left">
-              <div className="font-ui font-bold text-base text-[#3E2723] tracking-tight">WE ARE UNITED</div>
-              <div className="text-[10px] text-warm-muted -mt-0.5 font-medium">Apni Samaj, Apna Network</div>
+              <div className="font-ui font-bold text-base text-[#3E2723] tracking-tight">BHOI</div>
+              <div className="text-[10px] text-warm-muted -mt-0.5 font-medium">Connect. Empower. Grow.</div>
             </div>
           </Link>
 
@@ -769,11 +771,29 @@ function DashboardStyleHome() {
       </aside>
 
       {/* Main Workspace (Top Header + Center Main + Right Panel) */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 lg:h-screen overflow-hidden pb-16 lg:pb-0">
         {/* 2. Top Header Bar */}
-        <header className="h-16 border-b border-[#EBE3DB] bg-[#FAF3EC]/80 backdrop-blur-md px-6 flex items-center justify-between flex-shrink-0 z-30 shadow-xs">
-          {/* Search bar */}
-          <div className="relative w-full max-w-md hidden sm:block">
+        <header className="h-14 sm:h-16 border-b border-[#EBE3DB] bg-[#FAF3EC]/95 backdrop-blur-md px-2 sm:px-4 lg:px-6 flex items-center justify-between flex-shrink-0 z-30 shadow-2xs w-full max-w-full overflow-x-clip">
+          {/* Mobile Logo + App Title */}
+          <Link to="/" className="flex items-center gap-1.5 lg:hidden flex-shrink-0">
+            <svg width="26" height="26" viewBox="0 0 40 40" className="drop-shadow-xs flex-shrink-0">
+              <defs>
+                <linearGradient id="lg_mob" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#F97316" />
+                  <stop offset="100%" stopColor="#EA580C" />
+                </linearGradient>
+              </defs>
+              <path d="M20 3 L34 9 V21 C34 29 27 35 20 37 C13 35 6 29 6 21 V9 Z" fill="url(#lg_mob)" />
+              <path d="M14 19 L18 23 L26 14" fill="none" stroke="#FFF5EE" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <div className="leading-tight text-left max-w-[85px] xs:max-w-[110px] sm:max-w-none">
+              <div className="font-ui font-extrabold text-[11px] sm:text-sm text-[#3E2723] tracking-tight truncate">BHOI</div>
+              <div className="text-[8px] sm:text-[9px] text-warm-muted -mt-0.5 font-semibold truncate">Connect. Empower. Grow.</div>
+            </div>
+          </Link>
+
+          {/* Search bar (desktop) */}
+          <div className="relative w-full max-w-xs md:max-w-md hidden md:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C6D58]" />
             <input
               type="text"
@@ -785,16 +805,16 @@ function DashboardStyleHome() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4 ml-auto">
+          <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2.5 ml-auto flex-shrink-0">
             {/* Location selector dropdown */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
-                className="flex items-center gap-1.5 pl-8 pr-8 py-1.5 rounded-full bg-[#FFF8F2] border border-[#EBE3DB] text-xs font-semibold text-[#3E2723] hover:bg-[#FDF2E9] focus:outline-none focus:ring-1 focus:ring-[#F97316] appearance-none cursor-pointer transition duration-200"
+                className="flex items-center gap-1 pl-4 sm:pl-6 pr-3 sm:pr-5 py-1 rounded-full bg-[#FFF8F2] border border-[#EBE3DB] text-[9.5px] xs:text-[10px] sm:text-xs font-bold text-[#3E2723] hover:bg-[#FDF2E9] focus:outline-none appearance-none cursor-pointer max-w-[66px] xs:max-w-[85px] sm:max-w-[130px] truncate"
                 style={{
-                  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%238C6D58' stroke-width='2' viewBox='0 0 24 24'><path d='M6 9l6 6 6-6'/></svg>")`,
-                  backgroundPosition: 'right 10px center',
+                  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='none' stroke='%238C6D58' stroke-width='2' viewBox='0 0 24 24'><path d='M6 9l6 6 6-6'/></svg>")`,
+                  backgroundPosition: 'right 3px center',
                   backgroundRepeat: 'no-repeat'
                 }}
               >
@@ -804,16 +824,16 @@ function DashboardStyleHome() {
                 <option value="Mumbai">Mumbai</option>
                 <option value="Amreli">Amreli</option>
               </select>
-              <MapPin className="w-3.5 h-3.5 text-[#F97316] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#F97316] absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
             {/* LanguageSelector */}
-            <div className="flex items-center gap-1 bg-[#FFF8F2] border border-[#EBE3DB] rounded-full p-0.5 shadow-2xs">
+            <div className="flex items-center gap-0.5 bg-[#FFF8F2] border border-[#EBE3DB] rounded-full p-0.5 flex-shrink-0">
               {(["en", "gu", "hi"] as const).map(l => (
                 <button
                   key={l}
                   onClick={() => setLanguage(l)}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition duration-200 uppercase ${language === l ? "bg-[#F97316] text-white" : "text-[#8C6D58] hover:text-[#3E2723]"
+                  className={`px-1 xs:px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold transition duration-200 uppercase ${language === l ? "bg-[#F97316] text-white shadow-2xs" : "text-[#8C6D58] hover:text-[#3E2723]"
                     }`}
                 >
                   {l}
@@ -822,39 +842,32 @@ function DashboardStyleHome() {
             </div>
 
             {/* Notification bell with badge */}
-            <button className="relative w-9 h-9 rounded-full bg-[#FFF8F2] border border-[#EBE3DB] hover:bg-[#FDF2E9] flex items-center justify-center transition duration-200 shadow-2xs">
-              <Bell className="w-4 h-4 text-[#3E2723]" />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 border border-white text-[9px] font-bold text-white rounded-full flex items-center justify-center">
+            <button className="relative w-6.5 h-6.5 xs:w-7 xs:h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFF8F2] border border-[#EBE3DB] hover:bg-[#FDF2E9] flex items-center justify-center transition duration-200 shadow-2xs flex-shrink-0">
+              <Bell className="w-3.5 h-3.5 text-[#3E2723]" />
+              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-500 border border-white text-[8px] font-bold text-white rounded-full flex items-center justify-center">
                 3
               </span>
             </button>
 
-            {/* User avatar + Hi, Rajesh */}
-            {/* User avatar + Hi, Rajesh */}
-            <div className="relative">
-              <div className="flex items-center gap-2">
-    <button
-                  onClick={() => {
-                    // Implement login navigation or modal here
-                    window.location.href = "/login";
-                  }}
-                  className="px-3 py-1 rounded-md bg-[#F97316] text-white text-sm font-semibold hover:bg-[#EA580C] transition"
-                >
-                  Login
-                </button>
-                <button
-                  onClick={() => {
-                    // Implement register navigation or modal here
-                    window.location.href = "/register";
-                  }}
-                  className="px-3 py-1 rounded-md border border-[#F97316] text-[#F97316] text-sm font-semibold hover:bg-[#F97316]/10 transition"
-                >
-                  Register
-                </button>
-              </div>
+            {/* Auth buttons */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Link
+                to="/login"
+                className="px-2 xs:px-2.5 sm:px-3 py-1 rounded-lg bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white text-[9.5px] xs:text-[10px] sm:text-xs font-bold hover:shadow-sm transition whitespace-nowrap active:scale-95 flex-shrink-0"
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="hidden md:inline-flex px-2.5 sm:px-3 py-1 rounded-lg border border-[#F97316] text-[#F97316] text-[10px] sm:text-xs font-bold hover:bg-[#F97316]/10 transition whitespace-nowrap flex-shrink-0"
+              >
+                Register
+              </Link>
             </div>
           </div>
         </header>
+
+
 
         {/* Content Body Layout */}
         <div className="flex-1 flex overflow-hidden">
@@ -2270,36 +2283,17 @@ function DashboardStyleHome() {
         </div>
       </div>
 
-      {/* 5. Mobile Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#FAF3EC] border-t border-[#EBE3DB] flex items-center justify-around px-2 z-40">
-        {[
-          { label: "Home", icon: LayoutDashboard },
-          { label: "Samachar", icon: Newspaper },
-          { label: "Matrimony", icon: Heart },
-          { label: "Jobs", icon: Briefcase },
-          { label: "Events", icon: Calendar }
-        ].map((item, i) => (
-          <button
-            key={i}
-            onClick={() => handleNavClick(item.label === "Home" ? "Dashboard" : item.label)}
-            className="flex flex-col items-center gap-1 text-[9px] text-[#8C6D58]"
-          >
-            <item.icon className={`w-5 h-5 ${(activeNav === "Dashboard" && item.label === "Home") || activeNav === item.label
-              ? "text-[#F97316]"
-              : "text-[#8C6D58]"
-              }`} />
-            <span className={
-              (activeNav === "Dashboard" && item.label === "Home") || activeNav === item.label
-                ? "text-[#F97316] font-bold"
-                : "text-warm-muted font-medium"
-            }>
-              {item.label === "Home"
-                ? t("sidebar.dashboard")
-                : t("sidebar." + item.label.charAt(0).toLowerCase() + item.label.slice(1).replace(/\s+/g, ""))}
-            </span>
-          </button>
-        ))}
-      </div>
+      {/* 5. Mobile Bottom Navigation with 3-Dot Button & Impressive Round Options Popup */}
+      <MobileBottomNav
+        items={sidebarItems.map(item => ({
+          to: item.label === "Dashboard" ? "/" : `/?page=${item.label.toLowerCase().replace(/\s+/g, "-")}`,
+          label: item.label,
+          icon: item.icon
+        }))}
+        activeLabel={activeNav}
+        onSelect={it => handleNavClick(it.label)}
+      />
+
 
       {/* --- INTERACTIVE MODALS --- */}
 
@@ -2674,6 +2668,9 @@ function DashboardStyleHome() {
     </div>
   );
 }
+
+
+
 
 const SAMACHAR_ITEMS = [
   {

@@ -2,7 +2,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, type ComponentType } from "react";
-import { ChevronLeft, LogOut, Menu, X, MapPin, Globe, Facebook, Twitter, Youtube, Phone, Mail, Building2, Users, Calendar, ExternalLink, Loader2, Lock } from "lucide-react";
+import { ChevronLeft, LogOut, Menu, X, MapPin, Globe, Facebook, Twitter, Youtube, Phone, Mail, Building2, Users, Calendar, ExternalLink, Loader2, Lock, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { AdBanner } from "@/components/wag/AdBanner";
@@ -164,23 +164,203 @@ export function DashboardSidebar({ items, title }: { items: SidebarItem[]; title
   );
 }
 
-export function MobileBottomNav({ items }: { items: SidebarItem[] }) {
+export function MobileBottomNav({
+  items,
+  onSelect,
+  activeLabel,
+}: {
+  items: SidebarItem[];
+  onSelect?: (item: SidebarItem) => void;
+  activeLabel?: string;
+}) {
   const path = useRouterState({ select: s => s.location.pathname });
-  const top = items.slice(0, 5);
+  const navigate = useNavigate();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [path, activeLabel]);
+
+  // Pick top 4 items for the bar
+  const topItems = items.slice(0, 4);
+
+  const isItemActive = (it: SidebarItem) => {
+    if (activeLabel) return it.label.toLowerCase() === activeLabel.toLowerCase();
+    return path === it.to || (it.to !== "/" && it.to !== "/dashboard" && it.to !== "/community-admin" && it.to !== "/admin" && path.startsWith(it.to));
+  };
+
+  const activeIndex = items.findIndex(isItemActive);
+  const isMoreActive = activeIndex >= 4;
+
+  const handleAction = (it: SidebarItem, e: React.MouseEvent) => {
+    setMoreOpen(false);
+    if (onSelect) {
+      onSelect(it);
+    } else if (it.locked) {
+      e.preventDefault();
+      toast.error(`Upgrade required to unlock ${it.label}!`);
+      navigate({ to: it.to.startsWith("/community-admin") ? "/community-admin/plan" : "/dashboard/subscription" });
+    } else {
+      navigate({ to: it.to, search: it.search });
+    }
+  };
+
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 bg-surface/95 backdrop-blur border-t border-warm z-30 flex">
-      {top.map(it => {
-        const active = path === it.to;
-        const Icon = it.icon;
-        return (
-          <Link key={it.to + it.label} to={it.to} className={cn("flex-1 flex flex-col items-center gap-1 py-2 text-[10px]", active ? "text-primary" : "text-warm-muted")}>
-            <Icon className="w-5 h-5" /><span className="truncate max-w-full px-1">{it.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+    <>
+      {/* Impressive Round Options Radial / Glassmorphism Popover */}
+      <AnimatePresence>
+        {moreOpen && (
+          <>
+            {/* Dark Backdrop with Blur */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMoreOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 lg:hidden"
+            />
+
+            {/* Premium Floating Round Radial Panel */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.6, y: 50, rotateX: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
+              exit={{ opacity: 0, scale: 0.6, y: 50, rotateX: 15 }}
+              transition={{ type: "spring", damping: 22, stiffness: 320 }}
+              className="fixed bottom-20 right-3 left-3 z-50 lg:hidden bg-gradient-to-b from-white/95 via-white/90 to-[#FAF3EC]/95 backdrop-blur-2xl border border-gold/40 rounded-[32px] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden max-h-[80vh]"
+            >
+              {/* Radial Header */}
+              <div className="flex items-center justify-between pb-3.5 mb-3 border-b border-[#EBE3DB]/80 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#F97316] to-[#EA580C] text-white flex items-center justify-center shadow-md shadow-[#F97316]/30">
+                    <MoreHorizontal className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="font-ui font-extrabold text-sm text-[#3E2723] tracking-tight">All Navigation Options</h3>
+                    <p className="text-[10px] text-[#8C6D58] font-medium">Full web view features available on mobile</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setMoreOpen(false)}
+                  className="w-8 h-8 rounded-full bg-[#FAF3EC] hover:bg-[#FDF2E9] text-[#3E2723] flex items-center justify-center transition shadow-xs border border-[#EBE3DB]"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Round Options Grid */}
+              <div className="overflow-y-auto flex-1 pr-1 grid grid-cols-4 sm:grid-cols-5 gap-3 py-2 scrollbar-thin">
+                {items.map((it, idx) => {
+                  const active = isItemActive(it);
+                  const Icon = it.icon;
+                  return (
+                    <motion.div
+                      key={it.to + it.label}
+                      initial={{ scale: 0, opacity: 0, y: 15 }}
+                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.02, type: "spring", stiffness: 350, damping: 25 }}
+                      className="flex flex-col items-center gap-1.5 text-center group cursor-pointer"
+                    >
+                      <button
+                        onClick={(e) => handleAction(it, e)}
+                        className={cn(
+                          "relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-md active:scale-90",
+                          active
+                            ? "bg-gradient-to-br from-[#F97316] to-[#EA580C] text-white ring-4 ring-[#F97316]/30 scale-105 shadow-lg shadow-[#F97316]/30"
+                            : "bg-white text-[#3E2723] hover:bg-[#FFF5EE] hover:text-[#F97316] hover:scale-105 border border-[#EBE3DB] hover:border-[#F97316]/40",
+                          it.locked && "opacity-60 bg-gray-100"
+                        )}
+                      >
+                        <Icon className="w-6 h-6" />
+                        {it.locked && (
+                          <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-amber-500 text-white rounded-full flex items-center justify-center text-[9px] shadow-sm border border-white">
+                            <Lock className="w-2.5 h-2.5" />
+                          </span>
+                        )}
+                        {it.badge && it.badge > 0 ? (
+                          <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center border border-white shadow-sm animate-bounce">
+                            {it.badge}
+                          </span>
+                        ) : null}
+                      </button>
+                      <span className={cn(
+                        "text-[10px] leading-tight font-semibold max-w-[70px] truncate transition-colors",
+                        active ? "text-[#F97316] font-bold" : "text-[#5C4033] group-hover:text-[#3E2723]"
+                      )}>
+                        {it.label}
+                      </span>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Horizontal Bottom Navigation Bar */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-[#FAF3EC]/95 backdrop-blur-xl border-t border-[#EBE3DB] z-30 flex items-center justify-around px-1 py-1 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        {topItems.map(it => {
+          const active = isItemActive(it);
+          const Icon = it.icon;
+          return (
+            <button
+              key={it.to + it.label}
+              onClick={(e) => handleAction(it, e)}
+              className={cn(
+                "flex-1 flex flex-col items-center gap-0.5 py-1.5 text-[10px] font-semibold transition-all relative group",
+                active ? "text-[#F97316] font-bold" : "text-[#8C6D58] hover:text-[#3E2723]"
+              )}
+            >
+              {active && (
+                <motion.span
+                  layoutId="bottomNavIndicator"
+                  className="absolute bottom-0 w-8 h-1 rounded-t-full bg-[#F97316] shadow-xs"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
+              <div className="relative">
+                <Icon className={cn("w-5 h-5 transition-transform duration-200 group-active:scale-90", active && "scale-110 text-[#F97316]")} />
+                {it.badge && it.badge > 0 ? (
+                  <span className="absolute -top-1 -right-2 min-w-3.5 h-3.5 px-0.5 bg-[#F97316] text-white text-[8px] rounded-full flex items-center justify-center font-bold border border-white">
+                    {it.badge}
+                  </span>
+                ) : null}
+              </div>
+              <span className="truncate max-w-full px-0.5 leading-tight">{it.label}</span>
+            </button>
+          );
+        })}
+
+        {/* 5th Item: 3-Dot "More" Button */}
+        <button
+          onClick={() => setMoreOpen(v => !v)}
+          className={cn(
+            "flex-1 flex flex-col items-center gap-0.5 py-1 text-[10px] font-semibold transition-all relative group",
+            moreOpen || isMoreActive ? "text-[#F97316] font-bold" : "text-[#8C6D58] hover:text-[#3E2723]"
+          )}
+        >
+          {(moreOpen || isMoreActive) && (
+            <motion.span
+              layoutId="bottomNavIndicator"
+              className="absolute bottom-0 w-8 h-1 rounded-t-full bg-[#F97316] shadow-xs"
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          )}
+          <div className={cn(
+            "w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 shadow-xs",
+            moreOpen ? "bg-gradient-to-br from-[#F97316] to-[#EA580C] text-white rotate-90 scale-110 shadow-md shadow-[#F97316]/30" : "bg-[#FFF5EE] border border-[#EBE3DB] hover:border-[#F97316]/50"
+          )}>
+            <MoreHorizontal className="w-4 h-4" />
+          </div>
+          <span className="truncate max-w-full px-0.5 leading-tight">More</span>
+        </button>
+      </nav>
+    </>
   );
 }
+
+
+
 
 export function MobileHeader({ title, items }: { title: string, items?: SidebarItem[] }) {
   const [open, setOpen] = useState(false);

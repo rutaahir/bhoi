@@ -1654,10 +1654,13 @@ export const api = {
   async getMyPlan(): Promise<any> {
     return await apiFetch<any>("/community-subscriptions/my-plan/");
   },
+  async getSubscriptionPlans(): Promise<any[]> {
+    try { return await apiFetch<any[]>("/plans/"); } catch { return []; }
+  },
   async getCommunitySubscriptions(): Promise<any[]> {
     try { return await apiFetch<any[]>("/community-subscriptions/"); } catch { return []; }
   },
-  async assignPlan(data: { community_id: number; plan_id: number; billing_cycle: string; price_paid: number }): Promise<any> {
+  async assignPlan(data: { community_id: number; plan_id: number; billing_cycle: string; price_paid: number; payment_method?: string; transaction_id?: string }): Promise<any> {
     return await apiFetch<any>("/community-subscriptions/assign/", { method: "POST", body: JSON.stringify(data) });
   },
   async renewPlan(subscriptionId: number, data: { billing_cycle: string; price_paid?: number; coupon?: string }): Promise<any> {

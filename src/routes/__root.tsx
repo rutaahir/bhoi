@@ -1,7 +1,7 @@
-﻿import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, createRootRouteWithContext, useRouter, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
 import { AnimatePresence } from "framer-motion";
-import { useEffect, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -11,6 +11,7 @@ import Navbar from "@/components/wag/Navbar";
 import Footer from "@/components/wag/Footer";
 import { DiamondBackground } from "@/components/wag/DiamondBackground";
 import { Toaster } from "@/components/ui/sonner";
+import { SitePasswordLock } from "@/components/wag/SitePasswordLock";
 
 function NotFound() {
   return (
@@ -43,14 +44,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "WE ARE UNITED — Aapni Samaj, Aapnu Network" },
+      { title: "BHOI — Connect. Empower. Grow." },
       { name: "description", content: "Community ERP and social network for Indian samaj communities — members, events, matrimony, jobs, donations and more." },
-      { name: "author", content: "WE ARE UNITED" },
-      { property: "og:title", content: "WE ARE UNITED — Connect Your Samaj Digitally" },
+      { name: "author", content: "BHOI" },
+      { property: "og:title", content: "BHOI — Connect Your Samaj Digitally" },
       { property: "og:description", content: "Community ERP and social network for Indian samaj communities." },
       { property: "og:type", content: "website" },
     ],
     links: [
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" },
@@ -77,20 +79,42 @@ function RootComponent() {
   const path = useRouterState({ select: s => s.location.pathname });
   const isAuthArea = path.startsWith("/dashboard") || path.startsWith("/community-admin") || path.startsWith("/admin") || path === "/login" || path.startsWith("/register");
   const hideNavbarAndFooter = isAuthArea || path === "/";
+
+  // Check if site access password is unlocked
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const unlocked = localStorage.getItem("site_access_unlocked") === "true" || sessionStorage.getItem("site_access_unlocked") === "true";
+      if (!unlocked) {
+        setIsUnlocked(false);
+      }
+    }
+  }, []);
+
+  const isPublicRegister = path.startsWith("/register");
+  const shouldShowLock = !isUnlocked && !isPublicRegister;
+
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider><AuthProvider>
-        {/* Global floating diamond background — fixed, behind all content */}
-        <DiamondBackground />
-        <div style={{ position: "relative", zIndex: 1 }}>
-          {!hideNavbarAndFooter && <Navbar />}
-          <AnimatePresence mode="wait">
-            <main key={path} className="min-h-[60vh]">
-              <Outlet />
-            </main>
-          </AnimatePresence>
-          {!hideNavbarAndFooter && <Footer />}
-        </div>
+        {shouldShowLock ? (
+          <SitePasswordLock onUnlock={() => setIsUnlocked(true)} />
+        ) : (
+          <>
+            {/* Global floating diamond background — fixed, behind all content */}
+            <DiamondBackground />
+            <div style={{ position: "relative", zIndex: 1 }}>
+              {!hideNavbarAndFooter && <Navbar />}
+              <AnimatePresence mode="wait">
+                <main key={path} className="min-h-[60vh]">
+                  <Outlet />
+                </main>
+              </AnimatePresence>
+              {!hideNavbarAndFooter && <Footer />}
+            </div>
+          </>
+        )}
         <Toaster position="top-right" richColors />
       </AuthProvider></LanguageProvider>
     </QueryClientProvider>

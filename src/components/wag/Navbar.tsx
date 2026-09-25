@@ -2,11 +2,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Search, Bell, Menu, X, ChevronDown, LogOut, User, LayoutDashboard, Settings as SettingsIcon } from "lucide-react";
+import { Search, Bell, Menu, X, ChevronDown, LogOut, User, LayoutDashboard, Settings as SettingsIcon, Home as HomeIcon, Building2, Users, Calendar, Briefcase, Heart } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { AvatarCircle, PlanBadge } from "./primitives";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { MobileBottomNav, type SidebarItem } from "./Sidebar";
 
 const LINKS = [
   { to: "/", label: "Home" },
@@ -17,10 +18,19 @@ const LINKS = [
   { to: "/matrimony", label: "Matrimony" },
 ];
 
+const PUBLIC_NAV_ITEMS: SidebarItem[] = [
+  { to: "/", label: "Home", icon: HomeIcon },
+  { to: "/communities", label: "Communities", icon: Building2 },
+  { to: "/directory", label: "Directory", icon: Users },
+  { to: "/events", label: "Events", icon: Calendar },
+  { to: "/jobs", label: "Jobs", icon: Briefcase },
+  { to: "/matrimony", label: "Matrimony", icon: Heart },
+];
+
 export function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2.5">
-      <svg width="36" height="36" viewBox="0 0 40 40" className="drop-shadow-sm">
+    <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+      <svg width="34" height="34" viewBox="0 0 40 40" className="drop-shadow-sm flex-shrink-0">
         <defs>
           <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="oklch(0.46 0.21 265)" />
@@ -31,8 +41,8 @@ export function Logo() {
         <path d="M14 19 L18 23 L26 14" fill="none" stroke="oklch(0.96 0.05 85)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <div className="leading-tight">
-        <div className="font-ui font-bold text-base">WE ARE UNITED</div>
-        <div className="text-[10px] text-warm-muted -mt-0.5">Aapni Samaj, Aapnu Network</div>
+        <div className="font-ui font-bold text-sm sm:text-base truncate">BHOI</div>
+        <div className="text-[9px] sm:text-[10px] text-warm-muted -mt-0.5 truncate">Connect. Empower. Grow.</div>
       </div>
     </Link>
   );
@@ -79,8 +89,8 @@ export default function Navbar() {
 
   return (
     <>
-      <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="sticky top-0 z-40 backdrop-blur-xl bg-surface/80 border-b border-warm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="sticky top-0 z-40 backdrop-blur-xl bg-surface/90 border-b border-warm w-full max-w-full overflow-x-clip">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-1.5 sm:gap-4">
           <Logo />
           <nav className="hidden lg:flex items-center gap-1">
             {LINKS.map(l => {
@@ -91,24 +101,24 @@ export default function Navbar() {
               );
             })}
           </nav>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setSearch(true)} className="w-9 h-9 rounded-lg hover:bg-sand flex items-center justify-center"><Search className="w-4 h-4" /></button>
-            <div className="hidden sm:flex items-center gap-0.5 bg-sand rounded-full p-0.5">
+          <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 flex-shrink-0">
+            <button onClick={() => setSearch(true)} className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg hover:bg-sand flex items-center justify-center flex-shrink-0"><Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
+            <div className="hidden xs:flex items-center gap-0.5 bg-sand rounded-full p-0.5 flex-shrink-0">
               {(["EN", "GU", "HI"] as const).map(l => (
-                <button key={l} onClick={() => setLang(l)} className={cn("px-2.5 py-1 rounded-full text-xs font-medium transition", lang === l ? "bg-primary text-white" : "text-warm-muted")}>{l}</button>
+                <button key={l} onClick={() => setLang(l)} className={cn("px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium transition", lang === l ? "bg-primary text-white" : "text-warm-muted")}>{l}</button>
               ))}
             </div>
             {!user ? (
-              <>
-                <Link to="/login" className="hidden sm:inline-flex px-4 py-2 rounded-lg border border-gold text-gold text-sm font-medium hover:bg-gold-light transition">Login</Link>
-                <Link to="/register" className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark transition shadow-sapphire">Register</Link>
-              </>
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                <Link to="/login" className="hidden sm:inline-flex px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-gold text-gold text-xs sm:text-sm font-medium hover:bg-gold-light transition">Login</Link>
+                <Link to="/register" className="px-2.5 sm:px-4 py-1 sm:py-2 rounded-lg bg-primary text-white text-xs sm:text-sm font-medium hover:bg-primary-dark transition shadow-sapphire">Register</Link>
+              </div>
             ) : (
               <>
                 <div className="relative">
                   <button 
                     onClick={() => { setNotifDrop(v => !v); setDrop(false); }} 
-                    className="relative w-9 h-9 rounded-lg hover:bg-sand flex items-center justify-center"
+                    className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg hover:bg-sand flex items-center justify-center"
                   >
                     <Bell className="w-4 h-4" />
                     {unreadCount > 0 && (
@@ -123,7 +133,7 @@ export default function Navbar() {
                         initial={{ opacity: 0, y: -6, scale: 0.95 }} 
                         animate={{ opacity: 1, y: 0, scale: 1 }} 
                         exit={{ opacity: 0, y: -6, scale: 0.95 }} 
-                        className="absolute right-0 top-12 w-80 bg-surface border border-warm rounded-xl shadow-warm-lg p-2 z-50 max-h-96 flex flex-col"
+                        className="absolute right-0 top-12 w-72 sm:w-80 bg-surface border border-warm rounded-xl shadow-warm-lg p-2 z-50 max-h-96 flex flex-col"
                       >
                         <div className="px-3 py-2 border-b border-warm flex justify-between items-center mb-1 flex-shrink-0">
                           <span className="font-semibold text-xs text-foreground">Notifications</span>
@@ -164,13 +174,13 @@ export default function Navbar() {
                   </AnimatePresence>
                 </div>
                 <div className="relative">
-                  <button onClick={() => { setDrop(v => !v); setNotifDrop(false); }} className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-sand">
-                    <AvatarCircle name={user.name} src={user.avatar} size={32} />
-                    <ChevronDown className="w-3 h-3" />
+                  <button onClick={() => { setDrop(v => !v); setNotifDrop(false); }} className="flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full hover:bg-sand">
+                    <AvatarCircle name={user.name} src={user.avatar} size={30} />
+                    <ChevronDown className="w-3 h-3 text-warm-muted" />
                   </button>
                   <AnimatePresence>
                     {drop && (
-                      <motion.div initial={{ opacity: 0, y: -6, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.95 }} className="absolute right-0 top-12 w-64 bg-surface border border-warm rounded-xl shadow-warm-lg p-2">
+                      <motion.div initial={{ opacity: 0, y: -6, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.95 }} className="absolute right-0 top-12 w-64 bg-surface border border-warm rounded-xl shadow-warm-lg p-2 z-50">
                         <div className="px-3 py-2.5 border-b border-warm mb-1">
                           <div className="font-medium text-sm">{user.name}</div>
                           <div className="text-xs text-warm-muted">{user.communityName}</div>
@@ -185,10 +195,12 @@ export default function Navbar() {
                 </div>
               </>
             )}
-            <button onClick={() => setMobile(true)} className="lg:hidden w-9 h-9 rounded-lg hover:bg-sand flex items-center justify-center"><Menu className="w-5 h-5" /></button>
+            <button onClick={() => setMobile(true)} className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-lg hover:bg-sand flex items-center justify-center"><Menu className="w-5 h-5" /></button>
           </div>
         </div>
       </motion.header>
+
+      <MobileBottomNav items={PUBLIC_NAV_ITEMS} />
 
       <AnimatePresence>
         {mobile && (
@@ -198,6 +210,7 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
 
       <AnimatePresence>
         {search && (
