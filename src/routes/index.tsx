@@ -959,8 +959,11 @@ function DashboardStyleHome() {
       <aside className="w-[240px] flex-shrink-0 border-r border-[#EBE3DB] bg-[#FAF3EC] flex flex-col justify-between p-4 sticky top-0 h-screen hidden lg:flex z-20">
         <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-160px)] pr-1">
           {/* Logo + Tagline */}
-          <Link to="/" className="flex items-center gap-2 px-2 py-1">
-            <img src={bhoiLogo} alt="BHOI Logo" className="h-10 w-auto object-contain drop-shadow-sm" />
+          <Link to="/" className="flex flex-col items-start gap-0.5 px-2 py-1 group">
+            <img src={bhoiLogo} alt="BHOI Logo" className="h-10 w-auto object-contain drop-shadow-sm group-hover:scale-[1.02] transition-transform" />
+            <span className="text-[9px] font-extrabold text-[#F97316] uppercase tracking-wider leading-none">
+              Connect. Empower. Grow.
+            </span>
           </Link>
 
           {/* Navigation items */}
@@ -1013,8 +1016,11 @@ function DashboardStyleHome() {
         {/* 2. Top Header Bar */}
         <header className="h-14 sm:h-16 border-b border-[#EBE3DB] bg-[#FAF3EC]/95 backdrop-blur-md px-2 sm:px-4 lg:px-6 flex items-center justify-between flex-shrink-0 z-30 shadow-2xs w-full max-w-full overflow-x-clip">
           {/* Mobile Logo + App Title */}
-          <Link to="/" className="flex items-center gap-1.5 lg:hidden flex-shrink-0">
-            <img src={bhoiLogo} alt="BHOI Logo" className="h-8 w-auto object-contain drop-shadow-xs flex-shrink-0" />
+          <Link to="/" className="flex flex-col items-start gap-0.5 lg:hidden flex-shrink-0 group">
+            <img src={bhoiLogo} alt="BHOI Logo" className="h-7 w-auto object-contain drop-shadow-xs flex-shrink-0 group-hover:scale-[1.02] transition-transform" />
+            <span className="text-[7.5px] font-extrabold text-[#F97316] uppercase tracking-wider leading-none">
+              Connect. Empower. Grow.
+            </span>
           </Link>
 
           {/* Search bar (desktop) */}

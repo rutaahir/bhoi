@@ -30,8 +30,11 @@ const PUBLIC_NAV_ITEMS: SidebarItem[] = [
 
 export function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-      <img src={bhoiLogo} alt="BHOI Logo" className="h-9 w-auto object-contain drop-shadow-xs flex-shrink-0" />
+    <Link to="/" className="flex flex-col items-start gap-0.5 flex-shrink-0 group">
+      <img src={bhoiLogo} alt="BHOI Logo" className="h-9 w-auto object-contain drop-shadow-xs flex-shrink-0 group-hover:scale-[1.02] transition-transform" />
+      <span className="text-[8px] sm:text-[9px] font-extrabold text-[#F97316] uppercase tracking-wider leading-none">
+        Connect. Empower. Grow.
+      </span>
     </Link>
   );
 }

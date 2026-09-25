@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { PageTransition } from "@/components/wag/primitives";
 import loginVideo from "@/assets/login.mp4";
+import bhoiLogo from "@/assets/Bhoi.png";
 
 export const Route = createFileRoute("/register/")({
   head: () => ({ meta: [{ title: "Register — BHOI" }] }),
@@ -422,24 +423,12 @@ function Register() {
         {/* TOP HEADER */}
         <header className="w-full max-w-7xl mx-auto px-6 pt-6 pb-2 z-20 flex justify-between items-center relative">
           <div className="flex items-center gap-3">
-            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FB923C] to-[#EA580C] flex items-center justify-center shadow-[0_6px_24px_rgba(234,88,12,0.4)] border border-white/20">
-              <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-white" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="7" r="2.5" fill="currentColor" />
-                <path d="M7.5 15.5C7.5 13 9.5 11.5 12 11.5C14.5 11.5 16.5 13 16.5 15.5" strokeLinecap="round" strokeWidth="1.8" />
-                <circle cx="7.5" cy="9.5" r="1.8" fill="currentColor" className="opacity-80" />
-                <path d="M4.5 16C4.5 14.2 5.8 13.2 7.5 13.2" strokeLinecap="round" strokeWidth="1.5" className="opacity-80" />
-                <circle cx="16.5" cy="9.5" r="1.8" fill="currentColor" className="opacity-80" />
-                <path d="M16.5 13.2C18.2 13.2 19.5 14.2 19.5 16" strokeLinecap="round" strokeWidth="1.5" className="opacity-80" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="font-extrabold text-xl text-white tracking-tight leading-none drop-shadow-md">
-                BHOI
-              </h1>
-              <p className="text-[10px] text-orange-400 font-bold tracking-wider uppercase mt-0.5">
+            <Link to="/" className="flex flex-col items-start gap-0.5 group">
+              <img src={bhoiLogo} alt="BHOI Logo" className="h-11 w-auto object-contain drop-shadow-md group-hover:scale-[1.02] transition-transform" />
+              <span className="text-[9px] font-extrabold text-orange-400 uppercase tracking-wider leading-none">
                 Connect. Empower. Grow.
-              </p>
-            </div>
+              </span>
+            </Link>
           </div>
 
           <Link

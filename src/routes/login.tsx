@@ -125,8 +125,11 @@ function App() {
         {/* TOP HEADER */}
         <header className="w-full max-w-7xl mx-auto px-6 pt-6 pb-2 z-20 flex justify-between items-center relative">
           <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-2">
-              <img src={bhoiLogo} alt="BHOI Logo" className="h-11 w-auto object-contain drop-shadow-md" />
+            <Link to="/" className="flex flex-col items-start gap-0.5 group">
+              <img src={bhoiLogo} alt="BHOI Logo" className="h-11 w-auto object-contain drop-shadow-md group-hover:scale-[1.02] transition-transform" />
+              <span className="text-[9px] font-extrabold text-orange-400 uppercase tracking-wider leading-none">
+                Connect. Empower. Grow.
+              </span>
             </Link>
           </div>
 
