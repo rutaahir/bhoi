@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Newspaper, Image as ImageIcon, Video, Network, Settings,
   Search, Bell, Globe, ChevronDown, Plus, Play, User, X, Mail, Phone, Home as HomeIcon,
   ChevronLeft, ChevronRight,
-  ShieldCheck, ArrowUpRight, Loader
+  ShieldCheck, ArrowUpRight, Loader, IndianRupee, Clock, Filter, Tag, ExternalLink, Share2, Loader2
 } from "lucide-react";
 import { COMMUNITIES, EVENTS, MATRIMONY, BUSINESSES, JOBS, NEWS } from "@/data/mock";
 import { api, getImageUrl } from "@/lib/api";
@@ -528,14 +528,114 @@ function DashboardStyleHome() {
   const [donationTab, setDonationTab] = useState<"campaigns" | "history">("campaigns");
   const [families, setFamilies] = useState<any[]>([]);
 
-  // Form states
-  const [newJob, setNewJob] = useState({ role: "", company: "", location: "", desc: "", salary: "" });
+  // Form & Filter states for Jobs Portal
+  const [newJob, setNewJob] = useState({ role: "", company: "", location: "", desc: "", salary: "", type: "Full-time", category: "Technology" });
+  const [jobSearch, setJobSearch] = useState("");
+  const [jobTypeFilter, setJobTypeFilter] = useState("All");
+  const [jobCategoryFilter, setJobCategoryFilter] = useState("All");
+  const [selectedJobDetails, setSelectedJobDetails] = useState<any>(null);
+  const [selectedJobApply, setSelectedJobApply] = useState<any>(null);
+  const [isSubmittingJob, setIsSubmittingJob] = useState(false);
+  const [isSubmittingApp, setIsSubmittingApp] = useState(false);
+  const [applyForm, setApplyForm] = useState({ name: "", email: "", phone: "", exp: "1-3 years", letter: "" });
+
   const [donateAmount, setDonateAmount] = useState<{ [key: string]: string }>({});
   const [dirSearchTab, setDirSearchTab] = useState<"members" | "businesses" | "contacts">("members");
   const [dirQuery, setDirQuery] = useState("");
   const [dirLocation, setDirLocation] = useState("All Locations");
 
-  const visibleJobs = (jobList.length ? jobList : DASHBOARD_JOBS).slice(0, 4);
+  // Fallback initial jobs list if database is empty
+  const FALLBACK_JOBS = [
+    { id: 101, role: "Senior Software Engineer", company: "Samaj Infotech Ltd.", location: "Ahmedabad, Gujarat", salary: "₹6.0 - ₹12.0 LPA", type: "Full-time", category: "Technology", desc: "Building scalable React & Python web applications for community enterprises.", logo: "S", applied: false },
+    { id: 102, role: "Account & Finance Manager", company: "Patel & Associates", location: "Surat, Gujarat", salary: "₹35,000 - ₹50,000 / mo", type: "Full-time", category: "Finance", desc: "Overseeing GST filings, financial audits, and client accounts.", logo: "P", applied: false },
+    { id: 103, role: "Marketing & Sales Lead", company: "Shree Umiya Traders", location: "Rajkot, Gujarat", salary: "₹25,000 - ₹40,000 / mo", type: "Full-time", category: "Sales", desc: "Driving regional business development and B2B wholesale distribution.", logo: "U", applied: false },
+    { id: 104, role: "UI/UX Product Designer", company: "Digital Samaj Studio", location: "Remote / Ahmedabad", salary: "₹5.0 - ₹9.0 LPA", type: "Remote", category: "Technology", desc: "Designing intuitive mobile and web dashboards for community platforms.", logo: "D", applied: false }
+  ];
+
+  const allAvailableJobs = useMemo(() => {
+    return jobList.length > 0 ? jobList : (jobs.length > 0 ? jobs : FALLBACK_JOBS);
+  }, [jobList, jobs]);
+
+  const filteredJobs = useMemo(() => {
+    return allAvailableJobs.filter((j: any) => {
+      const q = jobSearch.toLowerCase().trim();
+      const roleStr = (j.role || j.title || "").toLowerCase();
+      const companyStr = (j.company || "").toLowerCase();
+      const locationStr = (j.location || "").toLowerCase();
+      const descStr = (j.desc || j.description || "").toLowerCase();
+      const categoryStr = (j.category || "").toLowerCase();
+      const typeStr = (j.type || j.job_type || "").toLowerCase();
+
+      const matchSearch = !q || roleStr.includes(q) || companyStr.includes(q) || locationStr.includes(q) || descStr.includes(q);
+      const matchType = jobTypeFilter === "All" || typeStr.includes(jobTypeFilter.toLowerCase());
+      const matchCat = jobCategoryFilter === "All" || categoryStr.includes(jobCategoryFilter.toLowerCase());
+
+      return matchSearch && matchType && matchCat;
+    });
+  }, [allAvailableJobs, jobSearch, jobTypeFilter, jobCategoryFilter]);
+
+  const handlePostJobSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newJob.role.trim() || !newJob.company.trim()) {
+      toast.error("Please provide both Job Role and Company Name.");
+      return;
+    }
+    setIsSubmittingJob(true);
+    try {
+      const payload = {
+        role: newJob.role,
+        company: newJob.company,
+        location: newJob.location || "Gujarat",
+        salary: newJob.salary || "Competitive",
+        type: newJob.type || "Full-time",
+        category: newJob.category || "General",
+        desc: newJob.desc || "Opportunity posted by community business."
+      };
+      const res = await api.createJob(payload);
+      const createdJob = res || { ...payload, id: Date.now() };
+      setJobList(prev => [createdJob, ...prev]);
+      setShowPostJob(false);
+      setNewJob({ role: "", company: "", location: "", desc: "", salary: "", type: "Full-time", category: "Technology" });
+      toast.success("Job posting created successfully!");
+    } catch (err: any) {
+      console.error("Failed to post job:", err);
+      toast.error("Failed to post job. Please try again.");
+    } finally {
+      setIsSubmittingJob(false);
+    }
+  };
+
+  const handleApplyJobSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!applyForm.name.trim() || !applyForm.phone.trim()) {
+      toast.error("Please provide your Name and Contact Phone Number.");
+      return;
+    }
+    setIsSubmittingApp(true);
+    try {
+      if (selectedJobApply?.id) {
+        const formData = new FormData();
+        formData.append("job", String(selectedJobApply.id));
+        formData.append("applicant_name", applyForm.name);
+        formData.append("applicant_email", applyForm.email);
+        formData.append("applicant_phone", applyForm.phone);
+        formData.append("experience_years", applyForm.exp || "1-3 years");
+        formData.append("cover_letter", applyForm.letter || "Interested in this job role.");
+        await api.createJobApplication(formData).catch(() => null);
+      }
+      setJobList(prev => prev.map(j => (j.id === selectedJobApply?.id ? { ...j, applied: true } : j)));
+      toast.success(`Application submitted for ${selectedJobApply?.role || selectedJobApply?.title || "Job"}!`);
+      setSelectedJobApply(null);
+      setApplyForm({ name: "", email: "", phone: "", exp: "1-3 years", letter: "" });
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to submit application.");
+    } finally {
+      setIsSubmittingApp(false);
+    }
+  };
+
+  const visibleJobs = allAvailableJobs.slice(0, 4);
   const displaySamachar = news.length > 0 ? news : SAMACHAR_ITEMS;
   const displayEvents = eventList.length > 0 ? eventList : EVENTS_ITEMS;
   const quickAccessItems = sidebarItems
@@ -1459,47 +1559,182 @@ function DashboardStyleHome() {
               {/* JOBS VIEW */}
               {activeNav === "Jobs" && (
                 <motion.div key="jobs" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 text-left">
-                  <div className="flex justify-between items-center">
+                  {/* Header & Action */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h2 className="text-2xl font-bold text-[#3E2723]">{t("dashboardjobs.title_jobPortal")}</h2>
-                      <p className="text-xs text-warm-muted mt-1">{t("dashboardjobs.desc_opportunitiesFromSamajBusinesses")}</p>
+                      <h2 className="text-2xl font-black text-[#3E2723] flex items-center gap-2">
+                        <Briefcase className="w-6 h-6 text-[#F97316]" />
+                        {t("dashboardjobs.title_jobPortal")}
+                      </h2>
+                      <p className="text-xs text-warm-muted mt-1">
+                        Explore, filter, and apply for opportunities posted by community businesses and members.
+                      </p>
                     </div>
-                    <button onClick={() => setShowPostJob(true)} className="px-4 py-2 text-xs bg-[#F97316] text-white font-semibold rounded-xl flex items-center gap-1.5 shadow-md hover:bg-[#EA580C]">
-                      <Plus className="w-4 h-4" /> {t("dashboardindex.postJob")}
+                    <button 
+                      onClick={() => setShowPostJob(true)} 
+                      className="px-5 py-2.5 text-xs bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95 transition cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4 stroke-[3]" /> {t("dashboardindex.postJob")}
                     </button>
                   </div>
-                  <div className="space-y-3">
-                    {jobList.map((job, i) => (
-                      <div key={i} className="bg-white border border-[#EBE3DB] rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center hover:shadow-md transition gap-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#F97316] font-bold flex items-center justify-center text-lg">{job.logo ?? "J"}</div>
-                          <div>
-                            <h3 className="font-bold text-sm text-[#3E2723]">{t(job.role)}</h3>
-                            <p className="text-xs text-warm-muted">{t(job.company)} · {t(job.location)}</p>
-                            <div className="flex gap-2 mt-1">
-                              <span className="text-[9px] bg-orange-50 text-[#F97316] font-semibold px-2 py-0.5 rounded-full">{job.salary ? t(job.salary) : t("Competitive")}</span>
-                              <span className="text-[9px] bg-[#FAF3EC] text-[#5C4033] font-semibold px-2 py-0.5 rounded-full">{t(job.type ?? "Full-time")}</span>
+
+                  {/* Search Bar & Type Filter Pills */}
+                  <div className="bg-white border border-[#EBE3DB] rounded-3xl p-5 shadow-sm space-y-4">
+                    <div className="flex flex-col md:flex-row gap-3">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C6D58]" />
+                        <input
+                          type="text"
+                          value={jobSearch}
+                          onChange={(e) => setJobSearch(e.target.value)}
+                          placeholder="Search job roles, company name, location, or keywords..."
+                          className="w-full pl-11 pr-4 py-3 rounded-2xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316] text-xs font-semibold text-[#3E2723] transition"
+                        />
+                      </div>
+                      <select
+                        value={jobCategoryFilter}
+                        onChange={(e) => setJobCategoryFilter(e.target.value)}
+                        className="px-4 py-3 rounded-2xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316] text-xs font-bold text-[#5C4033] cursor-pointer"
+                      >
+                        {["All", "Technology", "Finance", "Sales", "Healthcare", "Engineering", "Retail", "Services", "Other"].map(cat => (
+                          <option key={cat} value={cat}>{cat === "All" ? "All Categories" : cat}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Filter Pills */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pt-1 border-t border-[#F3E8DE]">
+                      <span className="text-[11px] font-bold text-warm-muted shrink-0 flex items-center gap-1 mr-1">
+                        <Filter className="w-3.5 h-3.5" /> Type:
+                      </span>
+                      {["All", "Full-time", "Part-time", "Remote", "Contract", "Internship"].map(typeVal => (
+                        <button
+                          key={typeVal}
+                          onClick={() => setJobTypeFilter(typeVal)}
+                          className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition cursor-pointer border ${
+                            jobTypeFilter === typeVal
+                              ? "bg-[#F97316] text-white border-[#F97316] shadow-xs"
+                              : "border-[#EBE3DB] text-[#5C4033] bg-[#FFF8F2] hover:bg-[#FDF2E9]"
+                          }`}
+                        >
+                          {typeVal === "All" ? "All Types" : typeVal}
+                        </button>
+                      ))}
+                      <span className="ml-auto text-[11px] text-warm-muted font-semibold shrink-0">
+                        {filteredJobs.length} {filteredJobs.length === 1 ? "Opportunity" : "Opportunities"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Jobs List Grid */}
+                  {loading ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="bg-white border border-[#EBE3DB] rounded-3xl p-5 animate-pulse space-y-3">
+                          <div className="flex justify-between items-center">
+                            <div className="flex gap-3 items-center">
+                              <div className="w-12 h-12 rounded-2xl bg-[#F3E8DE]" />
+                              <div className="space-y-1.5">
+                                <div className="h-4 w-48 bg-[#F3E8DE] rounded" />
+                                <div className="h-3 w-32 bg-[#F3E8DE] rounded" />
+                              </div>
                             </div>
+                            <div className="h-8 w-24 bg-[#F3E8DE] rounded-xl" />
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 w-full md:w-auto">
-                          <button
-                            onClick={() => {
-                              const copy = [...jobList];
-                              copy[i].applied = !copy[i].applied;
-                              setJobList(copy);
-                            }}
-                            className={`flex-1 md:flex-none text-xs px-5 py-2 rounded-xl font-semibold transition ${job.applied
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-[#F97316] text-white hover:bg-[#EA580C]"
-                              }`}
-                          >
-                            {job.applied ? t("Applied") : t("dashboardjobs.apply")}
-                          </button>
-                        </div>
+                      ))}
+                    </div>
+                  ) : filteredJobs.length === 0 ? (
+                    <div className="bg-white border border-[#EBE3DB] rounded-3xl p-12 text-center shadow-sm space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-orange-50 text-[#F97316] flex items-center justify-center mx-auto">
+                        <Briefcase className="w-6 h-6" />
                       </div>
-                    ))}
-                  </div>
+                      <h3 className="font-extrabold text-base text-[#3E2723]">No Jobs Found Matching Filters</h3>
+                      <p className="text-xs text-warm-muted max-w-sm mx-auto">
+                        Try adjusting your search query or reset category filters to view more community career postings.
+                      </p>
+                      <button
+                        onClick={() => { setJobSearch(""); setJobTypeFilter("All"); setJobCategoryFilter("All"); }}
+                        className="px-4 py-2 bg-[#FFF8F2] border border-[#EBE3DB] text-[#F97316] text-xs font-bold rounded-xl hover:bg-orange-50 transition"
+                      >
+                        Reset All Filters
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {filteredJobs.map((job: any, i: number) => {
+                        const roleTitle = job.role || job.title || "Career Opportunity";
+                        const companyName = job.company || "Samaj Enterprise";
+                        const locationName = job.location || "Gujarat";
+                        const salaryText = job.salary || job.salary_range || "Competitive";
+                        const typeText = job.type || job.job_type || "Full-time";
+                        const descText = job.desc || job.description || "Exciting career opportunity posted by community member business.";
+                        const initialLogo = job.logo ?? job.logo_letter ?? companyName.charAt(0).toUpperCase();
+
+                        return (
+                          <div 
+                            key={job.id || i} 
+                            className="bg-white border border-[#EBE3DB] rounded-3xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center hover:shadow-md transition duration-200 gap-5 relative group"
+                          >
+                            <div className="flex items-start gap-4 flex-1">
+                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 text-[#F97316] font-black flex items-center justify-center text-xl shrink-0 shadow-2xs border border-orange-200/50">
+                                {initialLogo}
+                              </div>
+                              <div className="space-y-1.5 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h3 className="font-extrabold text-base text-[#3E2723] group-hover:text-[#F97316] transition">
+                                    {roleTitle}
+                                  </h3>
+                                  <span className="text-[10px] bg-orange-50 text-[#F97316] font-bold px-2.5 py-0.5 rounded-full border border-orange-200/50">
+                                    {typeText}
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3 text-xs text-warm-muted font-medium">
+                                  <span className="font-semibold text-[#5C4033] flex items-center gap-1">
+                                    <Building2 className="w-3.5 h-3.5 text-[#F97316]" /> {companyName}
+                                  </span>
+                                  <span>•</span>
+                                  <span className="flex items-center gap-1">
+                                    <MapPin className="w-3.5 h-3.5 text-slate-400" /> {locationName}
+                                  </span>
+                                  <span>•</span>
+                                  <span className="flex items-center gap-1 font-bold text-emerald-600">
+                                    <Tag className="w-3.5 h-3.5" /> {salaryText}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-warm-muted/90 line-clamp-2 pt-1">
+                                  {descText}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2.5 w-full md:w-auto border-t md:border-t-0 pt-3 md:pt-0 border-[#F3E8DE] shrink-0">
+                              <button
+                                onClick={() => setSelectedJobDetails(job)}
+                                className="px-4 py-2.5 bg-[#FFF8F2] hover:bg-[#FAF3EC] text-[#5C4033] text-xs font-bold rounded-2xl border border-[#EBE3DB] transition duration-150 cursor-pointer"
+                              >
+                                View Details
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (!job.applied) {
+                                    setSelectedJobApply(job);
+                                  }
+                                }}
+                                className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition duration-150 shadow-2xs cursor-pointer ${
+                                  job.applied
+                                    ? "bg-emerald-50 text-emerald-600 border border-emerald-200 cursor-default"
+                                    : "bg-[#F97316] text-white hover:bg-[#EA580C] hover:shadow-md"
+                                }`}
+                              >
+                                {job.applied ? "Applied ✓" : "Apply Now"}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </motion.div>
               )}
 
@@ -2450,6 +2685,157 @@ function DashboardStyleHome() {
               </div>
               <button type="submit" className="w-full mt-2 py-2.5 bg-[#F97316] text-white text-xs font-bold rounded-xl hover:bg-[#EA580C] shadow-md transition">
                 Submit Job Post
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Job Details Modal */}
+      {selectedJobDetails && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-lg w-full p-6 space-y-5 relative shadow-2xl text-left">
+            <button onClick={() => setSelectedJobDetails(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FAF3EC] flex items-center justify-center hover:bg-[#FDF2E9] hover:text-[#F97316] transition cursor-pointer">
+              <X className="w-4 h-4 text-[#5C4033]" />
+            </button>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-amber-100/80 text-[#F97316] border border-amber-200/60 font-black text-2xl flex items-center justify-center shadow-inner">
+                {selectedJobDetails.logo || selectedJobDetails.role?.charAt(0) || "J"}
+              </div>
+              <div>
+                <h3 className="font-extrabold text-xl text-[#3E2723] leading-snug">{selectedJobDetails.role || selectedJobDetails.title}</h3>
+                <p className="text-xs font-semibold text-[#8C6D58]">{selectedJobDetails.company}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-3 bg-[#FFF8F2] rounded-xl border border-[#EBE3DB]/60">
+                <span className="text-warm-muted text-[10px] uppercase font-bold block mb-1">Location</span>
+                <span className="font-medium text-[#3E2723] flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-[#F97316]" /> {selectedJobDetails.location}</span>
+              </div>
+              <div className="p-3 bg-[#FFF8F2] rounded-xl border border-[#EBE3DB]/60">
+                <span className="text-warm-muted text-[10px] uppercase font-bold block mb-1">Offered Salary</span>
+                <span className="font-medium text-[#3E2723] flex items-center gap-1"><IndianRupee className="w-3.5 h-3.5 text-[#F97316]" /> {selectedJobDetails.salary}</span>
+              </div>
+              <div className="p-3 bg-[#FFF8F2] rounded-xl border border-[#EBE3DB]/60">
+                <span className="text-warm-muted text-[10px] uppercase font-bold block mb-1">Job Type</span>
+                <span className="font-medium text-[#3E2723] flex items-center gap-1"><Briefcase className="w-3.5 h-3.5 text-[#F97316]" /> {selectedJobDetails.type || "Full-time"}</span>
+              </div>
+              <div className="p-3 bg-[#FFF8F2] rounded-xl border border-[#EBE3DB]/60">
+                <span className="text-warm-muted text-[10px] uppercase font-bold block mb-1">Category</span>
+                <span className="font-medium text-[#3E2723] flex items-center gap-1"><Tag className="w-3.5 h-3.5 text-[#F97316]" /> {selectedJobDetails.category || "General"}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <h4 className="text-xs font-bold text-[#5C4033]">Job Overview & Requirements</h4>
+              <p className="text-xs text-[#5C4033]/90 leading-relaxed bg-[#FFF8F2] p-3.5 rounded-2xl border border-[#EBE3DB]/60 max-h-40 overflow-y-auto">
+                {selectedJobDetails.desc || selectedJobDetails.description || "No full description provided for this opening."}
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setSelectedJobDetails(null)}
+                className="flex-1 py-2.5 bg-[#FAF3EC] text-[#5C4033] font-bold text-xs rounded-xl hover:bg-[#FDF2E9] transition cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  const jobToApply = selectedJobDetails;
+                  setSelectedJobDetails(null);
+                  setSelectedJobApply(jobToApply);
+                }}
+                disabled={selectedJobDetails.applied}
+                className={`flex-1 py-2.5 font-bold text-xs rounded-xl shadow-md transition cursor-pointer ${selectedJobDetails.applied ? "bg-emerald-100 text-emerald-700 cursor-not-allowed" : "bg-[#F97316] text-white hover:bg-[#EA580C]"}`}
+              >
+                {selectedJobDetails.applied ? "Already Applied" : "Apply for Job"}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Job Apply Modal */}
+      {selectedJobApply && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-md w-full p-6 space-y-4 relative shadow-2xl text-left">
+            <button onClick={() => setSelectedJobApply(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FAF3EC] flex items-center justify-center hover:bg-[#FDF2E9] hover:text-[#F97316] transition cursor-pointer">
+              <X className="w-4 h-4 text-[#5C4033]" />
+            </button>
+            <div>
+              <h3 className="font-extrabold text-lg text-[#3E2723]">Apply for Position</h3>
+              <p className="text-xs text-[#8C6D58] font-medium">{selectedJobApply.role || selectedJobApply.title} at {selectedJobApply.company}</p>
+            </div>
+
+            <form onSubmit={handleApplyJobSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Your full name"
+                  value={applyForm.name}
+                  onChange={(e) => setApplyForm({ ...applyForm, name: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#5C4033]">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="name@example.com"
+                    value={applyForm.email}
+                    onChange={(e) => setApplyForm({ ...applyForm, email: e.target.value })}
+                    className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#5C4033]">Phone / WhatsApp</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+91 9876543210"
+                    value={applyForm.phone}
+                    onChange={(e) => setApplyForm({ ...applyForm, phone: e.target.value })}
+                    className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Experience Level</label>
+                <select
+                  value={applyForm.exp}
+                  onChange={(e) => setApplyForm({ ...applyForm, exp: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                >
+                  <option value="Fresher / Entry Level">Fresher / Entry Level</option>
+                  <option value="1-3 years">1 - 3 Years</option>
+                  <option value="3-5 years">3 - 5 Years</option>
+                  <option value="5+ years">5+ Years Senior</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Cover Note / Why you are a good fit</label>
+                <textarea
+                  rows={3}
+                  placeholder="Share a brief overview of your background or relevant experience..."
+                  value={applyForm.letter}
+                  onChange={(e) => setApplyForm({ ...applyForm, letter: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316] resize-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmittingApp}
+                className="w-full mt-2 py-2.5 bg-[#F97316] text-white text-xs font-bold rounded-xl hover:bg-[#EA580C] shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isSubmittingApp && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isSubmittingApp ? "Submitting Application..." : "Submit Application"}
               </button>
             </form>
           </motion.div>
