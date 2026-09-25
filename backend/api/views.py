@@ -104,6 +104,7 @@ from .models import (
     Business, MatrimonyProfile, Campaign, Donation,
     News, Family, FamilyMember, EventRegistration,
     CommunityApprovalHistory, Notification, SubscriptionPlan, Role, Advertisement, Gallery,
+    CommunityVideo, CommunityDocument,
     PartnerPreference, ProfileVisibility, InterestRequest, Wishlist, ProfileView,
     CommunityActivityLog, MatrimonyPhoto, MatrimonyAuditLog, JobApplication,
     FeatureMaster, PlanFeaturePermission, CommunitySubscription, SubscriptionHistory,
@@ -117,6 +118,7 @@ from .serializers import (
     DonationSerializer, NewsSerializer, FamilySerializer, FamilyMemberSerializer,
     EventRegistrationSerializer, CommunityApprovalHistorySerializer, NotificationSerializer,
     SubscriptionPlanSerializer, RoleSerializer, AdvertisementSerializer, GallerySerializer,
+    CommunityVideoSerializer, CommunityDocumentSerializer,
     PartnerPreferenceSerializer, ProfileVisibilitySerializer, InterestRequestSerializer,
     WishlistSerializer, ProfileViewSerializer, MatrimonyPhotoSerializer, MatrimonyAuditLogSerializer,
     JobApplicationSerializer,
@@ -6442,6 +6444,34 @@ class GalleryViewSet(viewsets.ModelViewSet):
         community_id = self.request.query_params.get('communityId')
         if community_id:
             queryset = queryset.filter(community_id=community_id)
+        return queryset
+
+class CommunityVideoViewSet(viewsets.ModelViewSet):
+    serializer_class = CommunityVideoSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = CommunityVideo.objects.all().order_by('-uploaded_at')
+        community_id = self.request.query_params.get('communityId')
+        if community_id:
+            queryset = queryset.filter(community_id=community_id)
+        category = self.request.query_params.get('category')
+        if category:
+            queryset = queryset.filter(category=category)
+        return queryset
+
+class CommunityDocumentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommunityDocumentSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = CommunityDocument.objects.all().order_by('-uploaded_at')
+        community_id = self.request.query_params.get('communityId')
+        if community_id:
+            queryset = queryset.filter(community_id=community_id)
+        category = self.request.query_params.get('category')
+        if category:
+            queryset = queryset.filter(category=category)
         return queryset
 
 class ForgotPasswordView(APIView):

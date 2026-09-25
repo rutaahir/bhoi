@@ -7,6 +7,7 @@ from .views import (
     DonationViewSet, NewsViewSet, FamilyViewSet, FamilyMemberViewSet,
     EventRegistrationViewSet, NotificationViewSet, CommunityApprovalHistoryViewSet,
     SubscriptionPlanViewSet, RoleViewSet, AdvertisementViewSet, GalleryViewSet,
+    CommunityVideoViewSet, CommunityDocumentViewSet,
     ForgotPasswordView, ResetPasswordView, ChangePasswordView, VerifyForgotOTPView,
     RegisterSendOTPView, RegisterVerifyOTPView, JobApplicationViewSet,
     MessageRequestViewSet, ConversationViewSet, MessageViewSet,
@@ -60,6 +61,8 @@ router.register(r'subscription-audit-logs', SubscriptionAuditLogViewSet, basenam
 router.register(r'roles', RoleViewSet, basename='role')
 router.register(r'advertisements', AdvertisementViewSet, basename='advertisement')
 router.register(r'gallery', GalleryViewSet, basename='gallery')
+router.register(r'videos', CommunityVideoViewSet, basename='video')
+router.register(r'documents', CommunityDocumentViewSet, basename='document')
 router.register(r'message-requests', MessageRequestViewSet, basename='message-request')
 router.register(r'conversations', ConversationViewSet, basename='conversation')
 router.register(r'messages', MessageViewSet, basename='message')

@@ -1280,6 +1280,36 @@ class Gallery(models.Model):
                 check_storage_quota(self.community, self.image.size)
         super().save(*args, **kwargs)
 
+class CommunityVideo(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    video_url = models.URLField(max_length=500, blank=True, null=True)
+    video_file = models.FileField(upload_to='videos/', null=True, blank=True)
+    thumbnail = models.ImageField(upload_to='videos/thumbnails/', null=True, blank=True)
+    thumbnail_url = models.URLField(max_length=500, null=True, blank=True)
+    duration = models.CharField(max_length=50, blank=True, default='')
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name='videos', null=True, blank=True)
+    category = models.CharField(max_length=100, default='General')
+    views_count = models.IntegerField(default=0)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+class CommunityDocument(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    document_file = models.FileField(upload_to='documents/', null=True, blank=True)
+    document_url = models.URLField(max_length=500, null=True, blank=True)
+    file_type = models.CharField(max_length=50, default='PDF')
+    file_size = models.CharField(max_length=50, blank=True, default='')
+    category = models.CharField(max_length=100, default='General Notice')
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name='documents', null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
 class EmailTemplate(models.Model):
     STATUS_CHOICES = (
         ('Active', 'Active'),

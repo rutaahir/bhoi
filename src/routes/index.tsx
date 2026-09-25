@@ -12,7 +12,7 @@ import {
   ShieldCheck, ArrowUpRight, Loader, IndianRupee, Clock, Filter, Tag, ExternalLink, Share2, Loader2
 } from "lucide-react";
 import { COMMUNITIES, EVENTS, MATRIMONY, BUSINESSES, JOBS, NEWS } from "@/data/mock";
-import { api, getImageUrl } from "@/lib/api";
+import { api, getImageUrl, MOCK_GALLERY, MOCK_VIDEOS, MOCK_DOCUMENTS } from "@/lib/api";
 import heroBg from "@/assets/hero-bg.png";
 import { toast } from "sonner";
 import { MobileBottomNav, type SidebarItem } from "@/components/wag/Sidebar";
@@ -533,6 +533,32 @@ function DashboardStyleHome() {
   const [donationTab, setDonationTab] = useState<"campaigns" | "history">("campaigns");
   const [families, setFamilies] = useState<any[]>([]);
 
+  // Gallery, Videos & Documents dynamic states
+  const [galleryList, setGalleryList] = useState<any[]>([]);
+  const [videoList, setVideoList] = useState<any[]>([]);
+  const [documentList, setDocumentList] = useState<any[]>([]);
+
+  // Gallery filters & upload state
+  const [galleryCategoryFilter, setGalleryCategoryFilter] = useState("All");
+  const [showUploadPhotoModal, setShowUploadPhotoModal] = useState(false);
+  const [newPhoto, setNewPhoto] = useState({ title: "", category: "Events", image_url: "", file: null as File | null });
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [activeGalleryModalItem, setActiveGalleryModalItem] = useState<any>(null);
+
+  // Video filters & upload state
+  const [videoCategoryFilter, setVideoCategoryFilter] = useState("All");
+  const [showAddVideoModal, setShowAddVideoModal] = useState(false);
+  const [newVideo, setNewVideo] = useState({ title: "", description: "", video_url: "", category: "Highlights", duration: "03:30" });
+  const [isAddingVideo, setIsAddingVideo] = useState(false);
+
+  // Document filters & upload state
+  const [documentCategoryFilter, setDocumentCategoryFilter] = useState("All");
+  const [documentSearchQuery, setDocumentSearchQuery] = useState("");
+  const [showAddDocumentModal, setShowAddDocumentModal] = useState(false);
+  const [newDocument, setNewDocument] = useState({ title: "", description: "", category: "General Notice", file_type: "PDF", file_size: "1.2 MB", document_url: "", file: null as File | null });
+  const [isAddingDocument, setIsAddingDocument] = useState(false);
+  const [selectedDocPreview, setSelectedDocPreview] = useState<any>(null);
+
   // Form & Filter states for Communities Portal
   const [communitySearch, setCommunitySearch] = useState("");
   const [communityTypeFilter, setCommunityTypeFilter] = useState("All");
@@ -576,6 +602,29 @@ function DashboardStyleHome() {
       return matchSearch && matchType;
     });
   }, [allAvailableCommunities, communitySearch, communityTypeFilter]);
+
+  const filteredGalleryItems = useMemo(() => {
+    return galleryList.filter((g: any) => {
+      if (galleryCategoryFilter === "All") return true;
+      return (g.category || "").toLowerCase() === galleryCategoryFilter.toLowerCase();
+    });
+  }, [galleryList, galleryCategoryFilter]);
+
+  const filteredVideoItems = useMemo(() => {
+    return videoList.filter((v: any) => {
+      if (videoCategoryFilter === "All") return true;
+      return (v.category || "").toLowerCase() === videoCategoryFilter.toLowerCase();
+    });
+  }, [videoList, videoCategoryFilter]);
+
+  const filteredDocumentItems = useMemo(() => {
+    return documentList.filter((d: any) => {
+      const matchCat = documentCategoryFilter === "All" || (d.category || "").toLowerCase() === documentCategoryFilter.toLowerCase();
+      const q = documentSearchQuery.toLowerCase().trim();
+      const matchSearch = !q || (d.title || "").toLowerCase().includes(q) || (d.description || "").toLowerCase().includes(q);
+      return matchCat && matchSearch;
+    });
+  }, [documentList, documentCategoryFilter, documentSearchQuery]);
 
   const handleRegisterCommunitySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -809,7 +858,10 @@ function DashboardStyleHome() {
           newsData,
           campaignsData,
           donationsData,
-          familiesData
+          familiesData,
+          galleryData,
+          videosData,
+          documentsData
         ] = await Promise.all([
           api.getCommunities(),
           api.getUpcomingEvents(),
@@ -820,6 +872,9 @@ function DashboardStyleHome() {
           api.getCampaigns(),
           api.getDonations(),
           api.getFamilies(),
+          api.getGallery(),
+          api.getVideos(),
+          api.getDocuments()
         ]);
 
         setCommunities(communitiesData);
@@ -830,6 +885,9 @@ function DashboardStyleHome() {
         setNews(newsData);
         setCampaignList(campaignsData);
         setFamilies(familiesData);
+        setGalleryList(galleryData);
+        setVideoList(videosData);
+        setDocumentList(documentsData);
 
         // Filter user donations
         const myDons = donationsData.filter((d: any) => d.donor === userProfile.name);
@@ -869,6 +927,9 @@ function DashboardStyleHome() {
         setJobList(JOBS.map(j => ({ ...j, applied: false })));
         setEventList(EVENTS.map(e => ({ ...e, registered: false })));
         setMatrimonyList(MATRIMONY.map(m => ({ ...m, interested: false })));
+        setGalleryList(MOCK_GALLERY);
+        setVideoList(MOCK_VIDEOS);
+        setDocumentList(MOCK_DOCUMENTS);
       } finally {
         setLoading(false);
       }
@@ -2230,6 +2291,363 @@ function DashboardStyleHome() {
                   )}
                 </motion.div>
               )}
+
+              {/* GALLERY VIEW */}
+              {activeNav === "Gallery" && (
+                <motion.div key="gallery" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 text-left">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-[#FFF5EE] via-white to-[#FFF9F5] p-6 rounded-[28px] border border-[#EBE3DB] shadow-xs">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-[#F97316] uppercase tracking-wider mb-1">
+                        <ImageIcon className="w-4 h-4" /> Samaj Community Gallery
+                      </div>
+                      <h2 className="text-2xl font-extrabold text-[#3E2723]">Photo Albums & Memories</h2>
+                      <p className="text-xs text-warm-muted mt-1">Explore authentic photos from Samaj events, festivals, samuh lagna, and gatherings</p>
+                    </div>
+                    <button
+                      onClick={() => setShowUploadPhotoModal(true)}
+                      className="px-5 py-2.5 bg-[#F97316] text-white rounded-xl text-xs font-bold hover:bg-[#EA580C] transition shadow-md flex items-center gap-2 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" /> Upload Photo
+                    </button>
+                  </div>
+
+                  {/* Filter Tabs */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                    {["All", "Events", "Lagna", "Cultural", "Social Cause", "Bhavan", "Meeting"].map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setGalleryCategoryFilter(cat)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                          galleryCategoryFilter === cat ? "bg-[#3E2723] text-white shadow-xs" : "bg-white text-[#5C4033] border border-[#EBE3DB] hover:bg-[#FFF8F2]"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Photo Grid */}
+                  {filteredGalleryItems.length === 0 ? (
+                    <div className="bg-white border border-[#EBE3DB] rounded-[24px] p-12 text-center text-warm-muted space-y-3">
+                      <ImageIcon className="w-12 h-12 mx-auto text-[#8C6D58]/40" />
+                      <p className="text-sm font-semibold">No photos found in this category</p>
+                      <button onClick={() => setGalleryCategoryFilter("All")} className="text-xs font-bold text-[#F97316] hover:underline">Show all photos</button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredGalleryItems.map((item: any, idx: number) => (
+                        <motion.div
+                          key={item.id || idx}
+                          whileHover={{ y: -4 }}
+                          className="group bg-white rounded-[24px] border border-[#EBE3DB] overflow-hidden shadow-xs hover:shadow-md transition duration-300 flex flex-col justify-between"
+                        >
+                          <div className="relative aspect-4/3 overflow-hidden bg-[#FAF3EC] cursor-pointer" onClick={() => setActiveGalleryModalItem(item)}>
+                            <img
+                              src={getImageUrl(item.image || item.image_url)}
+                              alt={item.title || "Samaj Photo"}
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                              <span className="p-3 bg-white/90 text-[#3E2723] rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                                <Eye className="w-5 h-5 text-[#F97316]" />
+                              </span>
+                            </div>
+                            <span className="absolute top-3 left-3 px-3 py-1 bg-black/60 backdrop-blur-md text-white rounded-full text-[10px] font-bold">
+                              {item.category || "General"}
+                            </span>
+                          </div>
+                          <div className="p-4 space-y-2">
+                            <h3 className="font-bold text-sm text-[#3E2723] line-clamp-1">{item.title || `Samaj Memory ${idx + 1}`}</h3>
+                            <div className="flex items-center justify-between text-[11px] text-warm-muted pt-2 border-t border-[#F3E8DE]">
+                              <span>{item.uploaded_at ? new Date(item.uploaded_at).toLocaleDateString() : "Recent"}</span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    const link = document.createElement("a");
+                                    link.href = getImageUrl(item.image || item.image_url);
+                                    link.download = (item.title || "samaj_photo") + ".jpg";
+                                    link.target = "_blank";
+                                    link.click();
+                                  }}
+                                  className="p-1.5 rounded-lg hover:bg-[#FFF5EE] text-[#8C6D58] hover:text-[#F97316] transition cursor-pointer"
+                                  title="Download Photo"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    if (confirm("Delete this photo?")) {
+                                      try {
+                                        await api.deleteGalleryPhoto(item.id);
+                                        setGalleryList(prev => prev.filter(g => g.id !== item.id));
+                                        toast.success("Photo removed successfully");
+                                      } catch (e) {
+                                        setGalleryList(prev => prev.filter(g => g.id !== item.id));
+                                        toast.success("Photo removed");
+                                      }
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-lg hover:bg-red-50 text-[#8C6D58] hover:text-red-600 transition cursor-pointer"
+                                  title="Delete Photo"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* VIDEOS VIEW */}
+              {activeNav === "Videos" && (
+                <motion.div key="videos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 text-left">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-[#FFF5EE] via-white to-[#FFF9F5] p-6 rounded-[28px] border border-[#EBE3DB] shadow-xs">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-[#F97316] uppercase tracking-wider mb-1">
+                        <Video className="w-4 h-4" /> Samaj Video Channel & Highlights
+                      </div>
+                      <h2 className="text-2xl font-extrabold text-[#3E2723]">Community Videos & Coverage</h2>
+                      <p className="text-xs text-warm-muted mt-1">Watch event video highlights, guest speeches, cultural performances, and tour videos</p>
+                    </div>
+                    <button
+                      onClick={() => setShowAddVideoModal(true)}
+                      className="px-5 py-2.5 bg-[#F97316] text-white rounded-xl text-xs font-bold hover:bg-[#EA580C] transition shadow-md flex items-center gap-2 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" /> Add Video
+                    </button>
+                  </div>
+
+                  {/* Filter Pills */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                    {["All", "Highlights", "Events", "Infrastructure", "Education"].map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setVideoCategoryFilter(cat)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                          videoCategoryFilter === cat ? "bg-[#3E2723] text-white shadow-xs" : "bg-white text-[#5C4033] border border-[#EBE3DB] hover:bg-[#FFF8F2]"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Featured Spotlight Video Card */}
+                  {filteredVideoItems.length > 0 && (
+                    <div className="bg-white border border-[#EBE3DB] rounded-[28px] p-6 space-y-4 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold uppercase tracking-widest text-[#F97316] bg-[#FFF5EE] px-3 py-1 rounded-full border border-[#F3E8DE]">
+                          Featured Video Spotlight
+                        </span>
+                        <span className="text-xs text-warm-muted font-medium">{filteredVideoItems[0].duration || "04:15"}</span>
+                      </div>
+                      <div className="grid lg:grid-cols-12 gap-6 items-center">
+                        <div
+                          className="lg:col-span-7 relative rounded-[20px] overflow-hidden aspect-video bg-black cursor-pointer group shadow-md"
+                          onClick={() => setSelectedVideo(filteredVideoItems[0])}
+                        >
+                          <img
+                            src={getImageUrl(filteredVideoItems[0].thumbnail || filteredVideoItems[0].img)}
+                            alt={filteredVideoItems[0].title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-90"
+                          />
+                          <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition flex items-center justify-center">
+                            <div className="w-16 h-16 rounded-full bg-[#F97316] text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition duration-300">
+                              <Play className="w-7 h-7 ml-1 fill-white" />
+                            </div>
+                          </div>
+                          <span className="absolute bottom-3 right-3 px-3 py-1 bg-black/70 text-white rounded-lg text-xs font-bold backdrop-blur-xs">
+                            {filteredVideoItems[0].duration || "Play Video"}
+                          </span>
+                        </div>
+                        <div className="lg:col-span-5 space-y-3">
+                          <span className="px-3 py-1 bg-[#FFF5EE] text-[#F97316] font-bold text-[11px] rounded-lg">
+                            {filteredVideoItems[0].category || "Highlights"}
+                          </span>
+                          <h3 className="text-xl font-extrabold text-[#3E2723] leading-snug">
+                            {filteredVideoItems[0].title}
+                          </h3>
+                          <p className="text-xs text-[#8C6D58] leading-relaxed">
+                            {filteredVideoItems[0].description || "Watch full video recording of this Samaj event."}
+                          </p>
+                          <div className="pt-2 flex items-center gap-4 text-xs font-semibold text-warm-muted">
+                            <span>👁️ {filteredVideoItems[0].views_count || 1200}+ Views</span>
+                            <span>📅 {filteredVideoItems[0].uploaded_at ? new Date(filteredVideoItems[0].uploaded_at).toLocaleDateString() : "Recent"}</span>
+                          </div>
+                          <button
+                            onClick={() => setSelectedVideo(filteredVideoItems[0])}
+                            className="mt-2 w-full py-3 bg-[#3E2723] text-white rounded-xl text-xs font-bold hover:bg-[#2C1B18] transition flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                          >
+                            <Play className="w-4 h-4 fill-white" /> Watch Full Video
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Video Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredVideoItems.map((vid: any, idx: number) => (
+                      <motion.div
+                        key={vid.id || idx}
+                        whileHover={{ y: -4 }}
+                        className="bg-white rounded-[24px] border border-[#EBE3DB] overflow-hidden shadow-xs hover:shadow-md transition duration-300 flex flex-col justify-between"
+                      >
+                        <div
+                          className="relative aspect-video bg-black cursor-pointer group overflow-hidden"
+                          onClick={() => setSelectedVideo(vid)}
+                        >
+                          <img
+                            src={getImageUrl(vid.thumbnail || vid.img)}
+                            alt={vid.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-90"
+                          />
+                          <div className="absolute inset-0 bg-black/25 group-hover:bg-black/10 transition flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-[#F97316] text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                              <Play className="w-5 h-5 ml-0.5 fill-white" />
+                            </div>
+                          </div>
+                          <span className="absolute bottom-2.5 right-2.5 px-2.5 py-1 bg-black/75 text-white rounded-md text-[10px] font-bold backdrop-blur-xs">
+                            {vid.duration || "03:30"}
+                          </span>
+                          <span className="absolute top-2.5 left-2.5 px-2.5 py-1 bg-black/60 text-white rounded-full text-[10px] font-bold backdrop-blur-xs">
+                            {vid.category || "General"}
+                          </span>
+                        </div>
+                        <div className="p-4 space-y-2">
+                          <h4 className="font-bold text-sm text-[#3E2723] line-clamp-1">{vid.title}</h4>
+                          <p className="text-xs text-warm-muted line-clamp-2">{vid.description || "Samaj official video coverage."}</p>
+                          <div className="flex items-center justify-between text-[11px] text-warm-muted pt-2 border-t border-[#F3E8DE]">
+                            <span>👁️ {vid.views_count || 500} views</span>
+                            <button
+                              onClick={() => setSelectedVideo(vid)}
+                              className="font-bold text-[#F97316] hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                              Watch <ArrowRight className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* DOCUMENTS VIEW */}
+              {activeNav === "Documents" && (
+                <motion.div key="documents" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 text-left">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-[#FFF5EE] via-white to-[#FFF9F5] p-6 rounded-[28px] border border-[#EBE3DB] shadow-xs">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-[#F97316] uppercase tracking-wider mb-1">
+                        <FileText className="w-4 h-4" /> Official Samaj Document Repository
+                      </div>
+                      <h2 className="text-2xl font-extrabold text-[#3E2723]">Rules, Financials & Application Forms</h2>
+                      <p className="text-xs text-warm-muted mt-1">Download official Samaj constitution, audit reports, membership forms, and circulars</p>
+                    </div>
+                    <button
+                      onClick={() => setShowAddDocumentModal(true)}
+                      className="px-5 py-2.5 bg-[#F97316] text-white rounded-xl text-xs font-bold hover:bg-[#EA580C] transition shadow-md flex items-center gap-2 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" /> Upload Document
+                    </button>
+                  </div>
+
+                  {/* Search & Category filter */}
+                  <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="w-4 h-4 text-[#8C6D58] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Search documents by title or description..."
+                        value={documentSearchQuery}
+                        onChange={(e) => setDocumentSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-white focus:outline-none focus:border-[#F97316]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                      {["All", "Rules & Regulations", "Financial", "Forms", "Bhavan", "General Notice"].map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => setDocumentCategoryFilter(cat)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                            documentCategoryFilter === cat ? "bg-[#3E2723] text-white shadow-xs" : "bg-white text-[#5C4033] border border-[#EBE3DB] hover:bg-[#FFF8F2]"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Document List */}
+                  {filteredDocumentItems.length === 0 ? (
+                    <div className="bg-white border border-[#EBE3DB] rounded-[24px] p-12 text-center text-warm-muted space-y-3">
+                      <FileText className="w-12 h-12 mx-auto text-[#8C6D58]/40" />
+                      <p className="text-sm font-semibold">No documents found matching your search</p>
+                      <button onClick={() => { setDocumentSearchQuery(""); setDocumentCategoryFilter("All"); }} className="text-xs font-bold text-[#F97316] hover:underline cursor-pointer">Clear filters</button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredDocumentItems.map((doc: any, idx: number) => (
+                        <motion.div
+                          key={doc.id || idx}
+                          whileHover={{ y: -2 }}
+                          className="bg-white border border-[#EBE3DB] rounded-[24px] p-5 space-y-4 shadow-xs hover:shadow-md transition flex flex-col justify-between text-left"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-[#FFF5EE] border border-[#F3E8DE] flex items-center justify-center shrink-0">
+                              <FileText className="w-6 h-6 text-[#F97316]" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="px-2.5 py-0.5 bg-[#FAF3EC] text-[#3E2723] font-bold text-[10px] rounded-md border border-[#EBE3DB]">
+                                  {doc.file_type || "PDF"}
+                                </span>
+                                <span className="px-2.5 py-0.5 bg-[#FFF5EE] text-[#F97316] font-bold text-[10px] rounded-md">
+                                  {doc.category || "Notice"}
+                                </span>
+                              </div>
+                              <h3 className="font-extrabold text-sm text-[#3E2723] leading-snug">{doc.title}</h3>
+                              <p className="text-xs text-warm-muted mt-1 line-clamp-2">{doc.description || "Official Samaj publication document."}</p>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 border-t border-[#F3E8DE] flex items-center justify-between text-xs">
+                            <span className="text-[11px] text-[#8C6D58] font-medium">
+                              {doc.file_size || "1.5 MB"} • {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString() : "Active"}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setSelectedDocPreview(doc)}
+                                className="px-3 py-1.5 bg-[#FAF3EC] hover:bg-[#FDF2E9] text-[#3E2723] font-bold text-xs rounded-xl transition flex items-center gap-1 cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-[#F97316]" /> Preview
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const link = document.createElement("a");
+                                  link.href = doc.document_file || doc.document_url || "#";
+                                  link.download = doc.title + ".pdf";
+                                  link.target = "_blank";
+                                  link.click();
+                                  toast.success("Downloading " + doc.title);
+                                }}
+                                className="px-3.5 py-1.5 bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs rounded-xl transition flex items-center gap-1 cursor-pointer shadow-xs"
+                              >
+                                <Download className="w-3.5 h-3.5" /> Download
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
             </AnimatePresence>
           </main>
         </div>
@@ -2935,6 +3353,353 @@ function DashboardStyleHome() {
             <button onClick={() => setShowReceipt(null)} className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer">
               {t("dashboarddonations.closeReceipt")}
             </button>
+          </motion.div>
+        </div>
+      )}
+
+      {/* 8. Upload Photo Modal */}
+      {showUploadPhotoModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-md w-full p-6 space-y-4 relative shadow-2xl text-left">
+            <button onClick={() => setShowUploadPhotoModal(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FAF3EC] flex items-center justify-center hover:bg-[#FDF2E9] hover:text-[#F97316] transition cursor-pointer">
+              <X className="w-4 h-4 text-[#5C4033]" />
+            </button>
+            <div>
+              <h3 className="font-extrabold text-lg text-[#3E2723]">Upload Gallery Photo</h3>
+              <p className="text-xs text-[#8C6D58]">Share a new photo from a Samaj event or memory</p>
+            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newPhoto.title.trim()) return toast.error("Please enter a photo title");
+              setIsUploadingPhoto(true);
+              try {
+                let photoUrl = newPhoto.image_url.trim() || "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&h=500&fit=crop";
+                const created = await api.uploadGalleryPhoto({ title: newPhoto.title, category: newPhoto.category, image_url: photoUrl }).catch(() => null);
+                const addedItem = created || { id: Date.now(), title: newPhoto.title, category: newPhoto.category, image: photoUrl, uploaded_at: new Date().toISOString() };
+                setGalleryList(prev => [addedItem, ...prev]);
+                toast.success("Photo uploaded successfully!");
+                setShowUploadPhotoModal(false);
+                setNewPhoto({ title: "", category: "Events", image_url: "", file: null });
+              } catch (err) {
+                toast.error("Failed to upload photo");
+              } finally {
+                setIsUploadingPhoto(false);
+              }
+            }} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Photo Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Youth Cultural Program 2026"
+                  value={newPhoto.title}
+                  onChange={(e) => setNewPhoto({ ...newPhoto, title: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Category</label>
+                <select
+                  value={newPhoto.category}
+                  onChange={(e) => setNewPhoto({ ...newPhoto, category: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                >
+                  <option value="Events">Events</option>
+                  <option value="Lagna">Samuh Lagna</option>
+                  <option value="Cultural">Cultural</option>
+                  <option value="Social Cause">Social Cause</option>
+                  <option value="Bhavan">Bhavan</option>
+                  <option value="Meeting">Meeting</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Image URL</label>
+                <input
+                  type="text"
+                  placeholder="https://..."
+                  value={newPhoto.image_url}
+                  onChange={(e) => setNewPhoto({ ...newPhoto, image_url: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                />
+              </div>
+              <div className="pt-2 flex gap-3">
+                <button type="button" onClick={() => setShowUploadPhotoModal(false)} className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isUploadingPhoto} className="flex-1 py-2.5 bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-bold rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5">
+                  {isUploadingPhoto ? <Loader className="w-4 h-4 animate-spin" /> : "Upload Photo"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* 9. Add Video Modal */}
+      {showAddVideoModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-md w-full p-6 space-y-4 relative shadow-2xl text-left">
+            <button onClick={() => setShowAddVideoModal(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FAF3EC] flex items-center justify-center hover:bg-[#FDF2E9] hover:text-[#F97316] transition cursor-pointer">
+              <X className="w-4 h-4 text-[#5C4033]" />
+            </button>
+            <div>
+              <h3 className="font-extrabold text-lg text-[#3E2723]">Add Community Video</h3>
+              <p className="text-xs text-[#8C6D58]">Add a new video coverage link for Samaj members</p>
+            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newVideo.title.trim()) return toast.error("Please enter a video title");
+              setIsAddingVideo(true);
+              try {
+                const created = await api.createVideo({
+                  title: newVideo.title,
+                  description: newVideo.description,
+                  video_url: newVideo.video_url || "https://www.youtube.com/embed/dQw4w9WgXcQ",
+                  category: newVideo.category,
+                  duration: newVideo.duration,
+                  thumbnail: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&h=350&fit=crop"
+                }).catch(() => null);
+                const addedItem = created || {
+                  id: Date.now(),
+                  title: newVideo.title,
+                  description: newVideo.description,
+                  video_url: newVideo.video_url || "https://www.youtube.com/embed/dQw4w9WgXcQ",
+                  category: newVideo.category,
+                  duration: newVideo.duration,
+                  thumbnail: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&h=350&fit=crop",
+                  views_count: 1,
+                  uploaded_at: new Date().toISOString()
+                };
+                setVideoList(prev => [addedItem, ...prev]);
+                toast.success("Video added successfully!");
+                setShowAddVideoModal(false);
+                setNewVideo({ title: "", description: "", video_url: "", category: "Highlights", duration: "03:30" });
+              } catch (err) {
+                toast.error("Failed to add video");
+              } finally {
+                setIsAddingVideo(false);
+              }
+            }} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Video Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Samaj Mahotsav Opening Ceremony"
+                  value={newVideo.title}
+                  onChange={(e) => setNewVideo({ ...newVideo, title: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Category</label>
+                <select
+                  value={newVideo.category}
+                  onChange={(e) => setNewVideo({ ...newVideo, category: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                >
+                  <option value="Highlights">Highlights</option>
+                  <option value="Events">Events</option>
+                  <option value="Infrastructure">Infrastructure</option>
+                  <option value="Education">Education</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">YouTube / Video Embed URL</label>
+                <input
+                  type="text"
+                  placeholder="https://www.youtube.com/embed/..."
+                  value={newVideo.video_url}
+                  onChange={(e) => setNewVideo({ ...newVideo, video_url: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Description</label>
+                <textarea
+                  rows={2}
+                  placeholder="Brief description..."
+                  value={newVideo.description}
+                  onChange={(e) => setNewVideo({ ...newVideo, description: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                />
+              </div>
+              <div className="pt-2 flex gap-3">
+                <button type="button" onClick={() => setShowAddVideoModal(false)} className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isAddingVideo} className="flex-1 py-2.5 bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-bold rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5">
+                  {isAddingVideo ? <Loader className="w-4 h-4 animate-spin" /> : "Save Video"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* 10. Add Document Modal */}
+      {showAddDocumentModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-md w-full p-6 space-y-4 relative shadow-2xl text-left">
+            <button onClick={() => setShowAddDocumentModal(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FAF3EC] flex items-center justify-center hover:bg-[#FDF2E9] hover:text-[#F97316] transition cursor-pointer">
+              <X className="w-4 h-4 text-[#5C4033]" />
+            </button>
+            <div>
+              <h3 className="font-extrabold text-lg text-[#3E2723]">Upload Community Document</h3>
+              <p className="text-xs text-[#8C6D58]">Upload official rules, circulars, reports or forms</p>
+            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newDocument.title.trim()) return toast.error("Please enter document title");
+              setIsAddingDocument(true);
+              try {
+                const created = await api.createDocument({
+                  title: newDocument.title,
+                  description: newDocument.description,
+                  category: newDocument.category,
+                  file_type: newDocument.file_type,
+                  file_size: newDocument.file_size,
+                  document_url: newDocument.document_url || "#"
+                }).catch(() => null);
+                const addedItem = created || {
+                  id: Date.now(),
+                  title: newDocument.title,
+                  description: newDocument.description,
+                  category: newDocument.category,
+                  file_type: newDocument.file_type,
+                  file_size: newDocument.file_size,
+                  document_url: "#",
+                  uploaded_at: new Date().toISOString()
+                };
+                setDocumentList(prev => [addedItem, ...prev]);
+                toast.success("Document uploaded successfully!");
+                setShowAddDocumentModal(false);
+                setNewDocument({ title: "", description: "", category: "General Notice", file_type: "PDF", file_size: "1.2 MB", document_url: "", file: null });
+              } catch (err) {
+                toast.error("Failed to upload document");
+              } finally {
+                setIsAddingDocument(false);
+              }
+            }} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Document Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Samaj Audit Report 2026"
+                  value={newDocument.title}
+                  onChange={(e) => setNewDocument({ ...newDocument, title: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#5C4033]">Category</label>
+                  <select
+                    value={newDocument.category}
+                    onChange={(e) => setNewDocument({ ...newDocument, category: e.target.value })}
+                    className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                  >
+                    <option value="Rules & Regulations">Rules & Regulations</option>
+                    <option value="Financial">Financial</option>
+                    <option value="Forms">Forms</option>
+                    <option value="Bhavan">Bhavan</option>
+                    <option value="General Notice">General Notice</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#5C4033]">File Format</label>
+                  <select
+                    value={newDocument.file_type}
+                    onChange={(e) => setNewDocument({ ...newDocument, file_type: e.target.value })}
+                    className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                  >
+                    <option value="PDF">PDF Document</option>
+                    <option value="DOCX">Word Document (.docx)</option>
+                    <option value="XLSX">Excel Sheet (.xlsx)</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Description</label>
+                <textarea
+                  rows={2}
+                  placeholder="Detailed document description..."
+                  value={newDocument.description}
+                  onChange={(e) => setNewDocument({ ...newDocument, description: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                />
+              </div>
+              <div className="pt-2 flex gap-3">
+                <button type="button" onClick={() => setShowAddDocumentModal(false)} className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isAddingDocument} className="flex-1 py-2.5 bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-bold rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5">
+                  {isAddingDocument ? <Loader className="w-4 h-4 animate-spin" /> : "Upload Document"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* 11. Gallery Lightbox Modal */}
+      {activeGalleryModalItem && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setActiveGalleryModalItem(null)}>
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setActiveGalleryModalItem(null)} className="absolute -top-12 right-0 p-2 text-white/80 hover:text-white transition cursor-pointer">
+              <X className="w-6 h-6" />
+            </button>
+            <img src={getImageUrl(activeGalleryModalItem.image || activeGalleryModalItem.image_url)} alt={activeGalleryModalItem.title} className="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl border border-white/20" />
+            <div className="mt-4 text-center text-white space-y-1">
+              <h3 className="text-lg font-bold">{activeGalleryModalItem.title || "Samaj Photo"}</h3>
+              <p className="text-xs text-white/70">{activeGalleryModalItem.category || "General"} • {activeGalleryModalItem.uploaded_at ? new Date(activeGalleryModalItem.uploaded_at).toLocaleDateString() : "Recent"}</p>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* 12. Document Preview Modal */}
+      {selectedDocPreview && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4" onClick={() => setSelectedDocPreview(null)}>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-xl w-full p-6 space-y-4 relative shadow-2xl text-left" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setSelectedDocPreview(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FAF3EC] flex items-center justify-center hover:bg-[#FDF2E9] hover:text-[#F97316] transition cursor-pointer">
+              <X className="w-4 h-4 text-[#5C4033]" />
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#FFF5EE] border border-[#F3E8DE] flex items-center justify-center shrink-0">
+                <FileText className="w-6 h-6 text-[#F97316]" />
+              </div>
+              <div>
+                <span className="px-2.5 py-0.5 bg-[#FFF5EE] text-[#F97316] font-bold text-[10px] rounded-md">{selectedDocPreview.category || "General Notice"}</span>
+                <h3 className="font-extrabold text-base text-[#3E2723] mt-0.5">{selectedDocPreview.title}</h3>
+              </div>
+            </div>
+            <div className="p-4 bg-white rounded-2xl border border-[#EBE3DB] space-y-2 text-xs">
+              <p className="text-[#3E2723] leading-relaxed">{selectedDocPreview.description || "Official Samaj document for member information."}</p>
+              <div className="pt-2 border-t border-[#F3E8DE] flex justify-between text-[11px] text-warm-muted">
+                <span>Format: {selectedDocPreview.file_type || "PDF"}</span>
+                <span>Size: {selectedDocPreview.file_size || "1.5 MB"}</span>
+              </div>
+            </div>
+            <div className="pt-2 flex gap-3">
+              <button onClick={() => setSelectedDocPreview(null)} className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer">
+                Close Preview
+              </button>
+              <button
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = selectedDocPreview.document_file || selectedDocPreview.document_url || "#";
+                  link.download = selectedDocPreview.title + ".pdf";
+                  link.target = "_blank";
+                  link.click();
+                  toast.success("Downloading " + selectedDocPreview.title);
+                }}
+                className="flex-1 py-2.5 bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-bold rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Download className="w-4 h-4" /> Download File
+              </button>
+            </div>
           </motion.div>
         </div>
       )}

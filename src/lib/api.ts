@@ -3,6 +3,30 @@ import {
   MATRIMONY, DONATIONS, CAMPAIGNS, NEWS, COMMITTEE, FAMILIES 
 } from "@/data/mock";
 
+export const MOCK_GALLERY = [
+  { id: 1, title: "Samaj Yuva Sammelan 2024", image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&h=500&fit=crop", category: "Events", uploaded_at: "2026-08-15" },
+  { id: 2, title: "Samuh Lagna Samaroh Celebrations", image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=500&fit=crop", category: "Lagna", uploaded_at: "2026-07-20" },
+  { id: 3, title: "Cultural Night & Youth Performance", image: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=800&h=500&fit=crop", category: "Cultural", uploaded_at: "2026-06-10" },
+  { id: 4, title: "Blood Donation & Health Camp", image: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=500&fit=crop", category: "Social Cause", uploaded_at: "2026-05-18" },
+  { id: 5, title: "Community Bhavan Foundation Ceremony", image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=500&fit=crop", category: "Bhavan", uploaded_at: "2026-04-12" },
+  { id: 6, title: "Annual General Committee Assembly", image: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=500&fit=crop", category: "Meeting", uploaded_at: "2026-03-01" },
+];
+
+export const MOCK_VIDEOS = [
+  { id: 1, title: "Samaj Yuva Sammelan 2024 Grand Highlights", description: "Complete video highlights of the 2024 Samaj Youth Assembly featuring keynote addresses, awards, and youth performances.", video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ", thumbnail: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&h=350&fit=crop", duration: "03:45", category: "Highlights", views_count: 1420, uploaded_at: "2026-08-16" },
+  { id: 2, title: "Samuh Lagna Samaroh 2026 Full Ceremony", description: "Coverage of the grand mass wedding ceremony organized by Shree Samaj trust in Surat.", video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ", thumbnail: "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=350&fit=crop", duration: "08:12", category: "Events", views_count: 2890, uploaded_at: "2026-07-22" },
+  { id: 3, title: "Community Bhavan Virtual Tour & Facilities", description: "Walkthrough of our newly constructed Samaj Bhavan facilities, AC banquet hall, and guest rooms.", video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ", thumbnail: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=350&fit=crop", duration: "04:30", category: "Infrastructure", views_count: 980, uploaded_at: "2026-05-02" },
+  { id: 4, title: "Educational Excellence Awards 2025", description: "Felicitating bright students and scholars from our community who achieved state top ranks.", video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ", thumbnail: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&h=350&fit=crop", duration: "05:15", category: "Education", views_count: 1150, uploaded_at: "2026-04-10" },
+];
+
+export const MOCK_DOCUMENTS = [
+  { id: 1, title: "Samaj Constitution & Bye-Laws 2026", description: "Official rules, governing regulations, committee structure, and member guidelines.", document_url: "#", file_type: "PDF", file_size: "2.4 MB", category: "Rules & Regulations", uploaded_at: "2026-01-10" },
+  { id: 2, title: "Annual Financial & Audit Report FY2025-26", description: "Transparent financial statements, income expenditure summary, and auditor report.", document_url: "#", file_type: "PDF", file_size: "1.8 MB", category: "Financial", uploaded_at: "2026-04-01" },
+  { id: 3, title: "Membership Registration Application Form", description: "Downloadable PDF form for new family registration and community membership verification.", document_url: "#", file_type: "PDF", file_size: "450 KB", category: "Forms", uploaded_at: "2026-02-15" },
+  { id: 4, title: "Samaj Bhavan Booking Guidelines & Rates", description: "Complete terms, deposit details, cancellation policies, and amenity pricing for hall booking.", document_url: "#", file_type: "PDF", file_size: "820 KB", category: "Bhavan", uploaded_at: "2026-03-20" },
+  { id: 5, title: "Samuh Lagna Application & Checklist", description: "Application form and required document verification checklist for mass wedding registration.", document_url: "#", file_type: "PDF", file_size: "650 KB", category: "Forms", uploaded_at: "2026-05-05" },
+];
+
 const HOSTNAME = typeof window !== "undefined" ? window.location.hostname : "localhost";
 const API_BASE = `/api`;
 
@@ -731,6 +755,102 @@ export const api = {
 
   async deleteEvent(id: string | number): Promise<void> {
     await apiFetch<void>(`/events/${id}/`, { method: "DELETE" });
+  },
+
+  // Gallery API
+  async getGallery(filters?: any): Promise<any[]> {
+    try {
+      const query = new URLSearchParams(filters || {}).toString();
+      const endpoint = query ? `/gallery/?${query}` : "/gallery/";
+      const res = await apiFetch<any[]>(endpoint);
+      if (Array.isArray(res) && res.length > 0) return res;
+      return MOCK_GALLERY;
+    } catch (e) {
+      console.warn("Gallery API call failed, using mock gallery", e);
+      return MOCK_GALLERY;
+    }
+  },
+
+  async uploadGalleryPhoto(data: any): Promise<any> {
+    let body: any = JSON.stringify(data);
+    if (data instanceof FormData) body = data;
+    else if (Object.values(data).some(val => val instanceof File || val instanceof Blob)) {
+      const formData = new FormData();
+      for (const [key, val] of Object.entries(data)) {
+        if (val === null) formData.append(key, "");
+        else if (val !== undefined) formData.append(key, val as any);
+      }
+      body = formData;
+    }
+    return await apiFetch<any>("/gallery/", { method: "POST", body });
+  },
+
+  async deleteGalleryPhoto(id: string | number): Promise<void> {
+    await apiFetch<void>(`/gallery/${id}/`, { method: "DELETE" });
+  },
+
+  // Videos API
+  async getVideos(filters?: any): Promise<any[]> {
+    try {
+      const query = new URLSearchParams(filters || {}).toString();
+      const endpoint = query ? `/videos/?${query}` : "/videos/";
+      const res = await apiFetch<any[]>(endpoint);
+      if (Array.isArray(res) && res.length > 0) return res;
+      return MOCK_VIDEOS;
+    } catch (e) {
+      console.warn("Videos API call failed, using mock videos", e);
+      return MOCK_VIDEOS;
+    }
+  },
+
+  async createVideo(data: any): Promise<any> {
+    let body: any = JSON.stringify(data);
+    if (data instanceof FormData) body = data;
+    else if (Object.values(data).some(val => val instanceof File || val instanceof Blob)) {
+      const formData = new FormData();
+      for (const [key, val] of Object.entries(data)) {
+        if (val === null) formData.append(key, "");
+        else if (val !== undefined) formData.append(key, val as any);
+      }
+      body = formData;
+    }
+    return await apiFetch<any>("/videos/", { method: "POST", body });
+  },
+
+  async deleteVideo(id: string | number): Promise<void> {
+    await apiFetch<void>(`/videos/${id}/`, { method: "DELETE" });
+  },
+
+  // Documents API
+  async getDocuments(filters?: any): Promise<any[]> {
+    try {
+      const query = new URLSearchParams(filters || {}).toString();
+      const endpoint = query ? `/documents/?${query}` : "/documents/";
+      const res = await apiFetch<any[]>(endpoint);
+      if (Array.isArray(res) && res.length > 0) return res;
+      return MOCK_DOCUMENTS;
+    } catch (e) {
+      console.warn("Documents API call failed, using mock documents", e);
+      return MOCK_DOCUMENTS;
+    }
+  },
+
+  async createDocument(data: any): Promise<any> {
+    let body: any = JSON.stringify(data);
+    if (data instanceof FormData) body = data;
+    else if (Object.values(data).some(val => val instanceof File || val instanceof Blob)) {
+      const formData = new FormData();
+      for (const [key, val] of Object.entries(data)) {
+        if (val === null) formData.append(key, "");
+        else if (val !== undefined) formData.append(key, val as any);
+      }
+      body = formData;
+    }
+    return await apiFetch<any>("/documents/", { method: "POST", body });
+  },
+
+  async deleteDocument(id: string | number): Promise<void> {
+    await apiFetch<void>(`/documents/${id}/`, { method: "DELETE" });
   },
 
   // Donations

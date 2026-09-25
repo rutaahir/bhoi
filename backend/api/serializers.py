@@ -5,7 +5,7 @@ from .models import (
     Business, MatrimonyProfile, Campaign, Donation,
     News, Family, FamilyMember, EventRegistration,
     CommunityApprovalHistory, Notification, SubscriptionPlan, Role, Advertisement,
-    Gallery, PartnerPreference, ProfileVisibility, InterestRequest, Wishlist, ProfileView,
+    Gallery, CommunityVideo, CommunityDocument, PartnerPreference, ProfileVisibility, InterestRequest, Wishlist, ProfileView,
     MatrimonyPhoto, MatrimonyAuditLog, JobApplication,
     FeatureMaster, PlanFeaturePermission, CommunitySubscription, ModulePermissionDefinition,
     SubscriptionHistory, PlanAddon, FeatureUsage, SubscriptionAuditLog, SystemQuota,
@@ -1023,6 +1023,38 @@ class GallerySerializer(serializers.ModelSerializer):
                 ret['image'] = f"http://localhost:8000{instance.image.url}"
         else:
             ret['image'] = instance.image_url
+        return ret
+
+class CommunityVideoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommunityVideo
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if instance.thumbnail:
+            request = self.context.get('request')
+            if request:
+                ret['thumbnail'] = request.build_absolute_uri(instance.thumbnail.url)
+            else:
+                ret['thumbnail'] = f"http://localhost:8000{instance.thumbnail.url}"
+        elif instance.thumbnail_url:
+            ret['thumbnail'] = instance.thumbnail_url
+        return ret
+
+class CommunityDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommunityDocument
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if instance.document_file:
+            request = self.context.get('request')
+            if request:
+                ret['document_file'] = request.build_absolute_uri(instance.document_file.url)
+            else:
+                ret['document_file'] = f"http://localhost:8000{instance.document_file.url}"
         return ret
 
 class PartnerPreferenceSerializer(serializers.ModelSerializer):
