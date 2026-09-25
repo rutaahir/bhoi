@@ -2215,20 +2215,67 @@ function DashboardStyleHome() {
                                 />
                               </div>
                               <button
-                onClick={(e) => handleJoinCommunityClick(selectedCommunityDetails, e)}
-                className={`flex-1 py-2.5 font-bold text-xs rounded-xl shadow-md transition cursor-pointer ${
-                  selectedCommunityDetails.joined
-                    ? "bg-amber-100 text-amber-800 border border-amber-300 flex items-center justify-center gap-1"
-                    : "bg-[#F97316] text-white hover:bg-[#EA580C]"
-                }`}
-              >
-                {selectedCommunityDetails.joined ? "Request Pending ✓" : "Join Community"}
-              </button>
-              </div>
-            </div>
-          </motion.div>
+                                onClick={async () => {
+                                  const amt = parseInt(donateAmount[item.id]);
+                                  if (!amt || amt <= 0) return alert("Please enter valid amount");
+                                  try {
+                                    const createdDonation = await api.createDonation({
+                                      campaign: item.id,
+                                      campaign_title: item.title,
+                                      donor: userProfile.name,
+                                      amount: amt
+                                    });
+
+                                    const nextRaised = item.raised + amt;
+                                    await api.updateCampaign(item.id, { raised: nextRaised }).catch(() => null);
+
+                                    setCampaignList(prev => prev.map(c => c.id === item.id ? { ...c, raised: nextRaised } : c));
+                                    setUserDonations(prev => [createdDonation, ...prev]);
+                                    setDonateAmount({ ...donateAmount, [item.id]: "" });
+                                    toast.success("Thank you for your generous contribution!");
+                                  } catch (err) {
+                                    console.error("Donation failed:", err);
+                                    toast.error("Donation process failed.");
+                                  }
+                                }}
+                                className="px-4 py-2 bg-[#F97316] text-white text-xs font-bold rounded-xl hover:bg-[#EA580C] shadow-sm transition"
+                              >
+                                {t("dashboarddonations.donateNow")}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-[#EBE3DB] rounded-[20px] p-5 shadow-xs space-y-4">
+                      <h3 className="font-bold text-sm text-[#3E2723]">{t("dashboarddonations.yourDonationHistory")}</h3>
+                      {userDonations.length === 0 ? (
+                        <p className="text-xs text-warm-muted py-4 text-center">{t("dashboarddonations.noDonationsFound")}</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {userDonations.map((d: any, idx: number) => (
+                            <div key={idx} className="flex justify-between items-center text-xs p-3 bg-[#FFF8F2] rounded-xl border border-[#EBE3DB]/60">
+                              <div>
+                                <div className="font-bold text-[#3E2723]">{d.campaign_title || "General Fund"}</div>
+                                <div className="text-[10px] text-warm-muted">{d.created_at ? new Date(d.created_at).toLocaleDateString() : "Today"}</div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="font-extrabold text-[#F97316]">₹{d.amount}</span>
+                                <button onClick={() => downloadReceiptPdf(d)} className="text-[11px] font-bold text-[#5C4033] hover:text-[#F97316] underline">Receipt</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </main>
         </div>
-      )}
+      </div>
 
       {/* Register Community Modal */}
       {showRegisterCommunity && (
@@ -2701,6 +2748,112 @@ function DashboardStyleHome() {
                 {t("Confirm Registration")}
               </button>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Community Details Modal */}
+      {selectedCommunityDetails && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-lg w-full overflow-hidden relative shadow-2xl text-left">
+            <button onClick={() => setSelectedCommunityDetails(null)} className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+            <div className="h-36 relative bg-amber-100 flex items-center justify-center overflow-hidden">
+              <img 
+                src={selectedCommunityDetails.cover || selectedCommunityDetails.cover_url || "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60"} 
+                alt="" 
+                onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60"; }}
+                className="w-full h-full object-cover" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <div className="absolute bottom-3 left-5 right-5 text-white">
+                <span className="text-[10px] font-extrabold bg-[#F97316] text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  {selectedCommunityDetails.type || "Community"}
+                </span>
+                <h3 className="font-extrabold text-xl text-white mt-1 drop-shadow-md">{selectedCommunityDetails.name}</h3>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-[#FFF8F2] rounded-2xl border border-[#EBE3DB]/60">
+                  <span className="text-warm-muted text-[10px] uppercase font-bold block mb-0.5">Location</span>
+                  <span className="font-semibold text-[#3E2723] flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-[#F97316]" /> {selectedCommunityDetails.village ? `${selectedCommunityDetails.village}, ${selectedCommunityDetails.district}` : selectedCommunityDetails.district || selectedCommunityDetails.state || "Gujarat"}
+                  </span>
+                </div>
+                <div className="p-3 bg-[#FFF8F2] rounded-2xl border border-[#EBE3DB]/60">
+                  <span className="text-warm-muted text-[10px] uppercase font-bold block mb-0.5">Total Members</span>
+                  <span className="font-semibold text-[#3E2723] flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5 text-[#F97316]" /> {selectedCommunityDetails.member_count || 150} Members
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <h4 className="text-xs font-bold text-[#5C4033]">About Community</h4>
+                <p className="text-xs text-[#5C4033]/90 leading-relaxed bg-[#FFF8F2] p-4 rounded-2xl border border-[#EBE3DB]/60">
+                  {selectedCommunityDetails.desc || selectedCommunityDetails.description || "Official community organization providing platform for family registration, events, matrimonials, and social welfare programs."}
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setSelectedCommunityDetails(null)}
+                  className="flex-1 py-2.5 bg-[#FAF3EC] text-[#5C4033] font-bold text-xs rounded-xl hover:bg-[#FDF2E9] transition cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={(e) => handleJoinCommunityClick(selectedCommunityDetails, e)}
+                  className={`flex-1 py-2.5 font-bold text-xs rounded-xl shadow-md transition cursor-pointer ${
+                    selectedCommunityDetails.joined
+                      ? "bg-amber-100 text-amber-800 border border-amber-300 flex items-center justify-center gap-1"
+                      : "bg-[#F97316] text-white hover:bg-[#EA580C]"
+                  }`}
+                >
+                  {selectedCommunityDetails.joined ? "Request Pending ✓" : "Join Community"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Login Required Modal */}
+      {showLoginPromptModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-sm w-full p-6 space-y-4 relative shadow-2xl text-center">
+            <button onClick={() => setShowLoginPromptModal(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FAF3EC] flex items-center justify-center hover:bg-[#FDF2E9] hover:text-[#F97316] transition cursor-pointer">
+              <X className="w-4 h-4 text-[#5C4033]" />
+            </button>
+            <div className="w-14 h-14 rounded-full bg-amber-100 text-[#F97316] flex items-center justify-center mx-auto text-2xl font-bold">
+              🔒
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-extrabold text-base text-[#3E2723]">Login Required to Join</h3>
+              <p className="text-xs text-warm-muted leading-relaxed">
+                You must be logged in to your BHOI account to join communities, request membership, and interact with community admins.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowLoginPromptModal(false)}
+                className="flex-1 py-2.5 bg-[#FAF3EC] text-[#5C4033] font-bold text-xs rounded-xl hover:bg-[#FDF2E9] transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowLoginPromptModal(false);
+                  navigate({ to: "/login" });
+                }}
+                className="flex-1 py-2.5 bg-[#F97316] text-white font-bold text-xs rounded-xl hover:bg-[#EA580C] shadow-md transition cursor-pointer"
+              >
+                Log In Now
+              </button>
+            </div>
           </motion.div>
         </div>
       )}
