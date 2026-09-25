@@ -528,6 +528,87 @@ function DashboardStyleHome() {
   const [donationTab, setDonationTab] = useState<"campaigns" | "history">("campaigns");
   const [families, setFamilies] = useState<any[]>([]);
 
+  // Form & Filter states for Communities Portal
+  const [communitySearch, setCommunitySearch] = useState("");
+  const [communityTypeFilter, setCommunityTypeFilter] = useState("All");
+  const [selectedCommunityDetails, setSelectedCommunityDetails] = useState<any>(null);
+  const [showRegisterCommunity, setShowRegisterCommunity] = useState(false);
+  const [isSubmittingCommunity, setIsSubmittingCommunity] = useState(false);
+  const [newCommunity, setNewCommunity] = useState({
+    name: "",
+    type: "Subsidiary",
+    district: "Ahmedabad",
+    village: "Navrangpura",
+    desc: "",
+    state: "Gujarat"
+  });
+
+  const FALLBACK_COMMUNITIES = [
+    { id: 101, name: "Ahmedabad Brahmin Samaj", type: "Super", state: "Gujarat", district: "Ahmedabad", village: "Navrangpura", member_count: 1250, cover: "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60", desc: "Premier Brahmin Samaj platform for Ahmedabad region promoting cultural exchange, student education, and community networking.", joined: false },
+    { id: 102, name: "Bangalore Kannada Koota", type: "Super", state: "Karnataka", district: "Bengaluru", village: "Jayanagar", member_count: 840, cover: "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=800&auto=format&fit=crop&q=60", desc: "Cultural and community organization for Kannada diaspora in Bangalore.", joined: false },
+    { id: 103, name: "Bhuj Kutchi Leva Patel", type: "Subsidiary", state: "Gujarat", district: "Kutch", village: "Bhuj City", member_count: 2300, cover: "https://images.unsplash.com/photo-1532375810709-75b1da00537c?w=800&auto=format&fit=crop&q=60", desc: "Local chapter connecting Leva Patel families across Kutch district.", joined: false },
+    { id: 104, name: "Chennai Iyengar Sabha", type: "Super", state: "Tamil Nadu", district: "Chennai", village: "Mylapore", member_count: 620, cover: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=800&auto=format&fit=crop&q=60", desc: "Promoting culture, religious events, and family welfare in Chennai.", joined: false },
+    { id: 105, name: "Delhi Punjabi Biradari", type: "Super", state: "Delhi", district: "New Delhi", village: "Greater Kailash", member_count: 1750, cover: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&auto=format&fit=crop&q=60", desc: "Connecting families, trade, and youth initiatives across NCR.", joined: false },
+    { id: 106, name: "Hyderabad Reddy Sangh", type: "Super", state: "Telangana", district: "Hyderabad", village: "Banjara Hills", member_count: 1410, cover: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60", desc: "Community association for social support, matrimonials, and student scholarships.", joined: false }
+  ];
+
+  const allAvailableCommunities = useMemo(() => {
+    return communityList.length > 0 ? communityList : (communities.length > 0 ? communities : FALLBACK_COMMUNITIES);
+  }, [communityList, communities]);
+
+  const filteredCommunities = useMemo(() => {
+    return allAvailableCommunities.filter((c: any) => {
+      const q = communitySearch.toLowerCase().trim();
+      const nameStr = (c.name || "").toLowerCase();
+      const districtStr = (c.district || "").toLowerCase();
+      const villageStr = (c.village || "").toLowerCase();
+      const stateStr = (c.state || "").toLowerCase();
+      const typeStr = (c.type || "").toLowerCase();
+
+      const matchSearch = !q || nameStr.includes(q) || districtStr.includes(q) || villageStr.includes(q) || stateStr.includes(q);
+      const matchType = communityTypeFilter === "All" || typeStr.includes(communityTypeFilter.toLowerCase());
+
+      return matchSearch && matchType;
+    });
+  }, [allAvailableCommunities, communitySearch, communityTypeFilter]);
+
+  const handleRegisterCommunitySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCommunity.name.trim()) {
+      toast.error("Please provide a Community Name.");
+      return;
+    }
+    setIsSubmittingCommunity(true);
+    try {
+      const payload = {
+        name: newCommunity.name,
+        type: newCommunity.type || "Subsidiary",
+        district: newCommunity.district || "Ahmedabad",
+        village: newCommunity.village || "Navrangpura",
+        state: newCommunity.state || "Gujarat",
+        desc: newCommunity.desc || "Community platform created by member.",
+        cover_url: "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60"
+      };
+      const created = await api.createCommunity(payload).catch(() => null);
+      const mapped = {
+        ...(created || payload),
+        id: created?.id || Date.now(),
+        cover: payload.cover_url,
+        member_count: 1,
+        joined: true
+      };
+      setCommunityList(prev => [mapped, ...prev]);
+      setShowRegisterCommunity(false);
+      setNewCommunity({ name: "", type: "Subsidiary", district: "Ahmedabad", village: "Navrangpura", desc: "", state: "Gujarat" });
+      toast.success("Community registered successfully!");
+    } catch (err: any) {
+      console.error("Failed to register community:", err);
+      toast.error("Failed to register community.");
+    } finally {
+      setIsSubmittingCommunity(false);
+    }
+  };
+
   // Form & Filter states for Jobs Portal
   const [newJob, setNewJob] = useState({ role: "", company: "", location: "", desc: "", salary: "", type: "Full-time", category: "Technology" });
   const [jobSearch, setJobSearch] = useState("");
@@ -704,7 +785,13 @@ function DashboardStyleHome() {
         }
 
         // Initialize interactive lists
-        setCommunityList(communitiesData.map(c => ({ ...c, joined: false, member_count: c.member_count || 150 })));
+        setCommunityList(communitiesData.map(c => ({
+          ...c,
+          cover: c.cover || c.cover_url || "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60",
+          logo: c.logo || c.logo_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop",
+          joined: false,
+          member_count: c.member_count || c.members || 150
+        })));
         setJobList(jobsData.map(j => ({ ...j, logo: j.logo ?? j.logo_letter ?? (j.company ? j.company.charAt(0).toUpperCase() : "J"), applied: false })));
         setEventList(eventsData.map(e => ({
           ...e,
@@ -714,7 +801,12 @@ function DashboardStyleHome() {
       } catch (error) {
         console.error("Failed to load data from API, using mock data", error);
         // Fallback to mock data
-        setCommunityList(COMMUNITIES.map(c => ({ ...c, joined: false, member_count: (c as any).members ?? 150 })));
+        setCommunityList(COMMUNITIES.map(c => ({
+          ...c,
+          cover: (c as any).cover || (c as any).cover_url || "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60",
+          joined: false,
+          member_count: (c as any).members ?? 150
+        })));
         setJobList(JOBS.map(j => ({ ...j, applied: false })));
         setEventList(EVENTS.map(e => ({ ...e, registered: false })));
         setMatrimonyList(MATRIMONY.map(m => ({ ...m, interested: false })));
@@ -1466,47 +1558,200 @@ function DashboardStyleHome() {
               {/* COMMUNITIES VIEW */}
               {activeNav === "Communities" && (
                 <motion.div key="communities" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 text-left">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-[#3E2723]">{t("sidebar.communities")}</h2>
-                    <span className="text-xs bg-[#FDF2E9] text-[#F97316] px-3 py-1 rounded-full font-bold">
-                      {loading ? <Loader className="w-3 h-3 animate-spin inline" /> : `${communities.length}+ ${t("sidebar.communities")}`}
-                    </span>
+                  {/* Header & Action */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-2xl font-black text-[#3E2723] flex items-center gap-2">
+                        <Users className="w-6 h-6 text-[#F97316]" />
+                        {t("sidebar.communities")}
+                      </h2>
+                      <p className="text-xs text-warm-muted mt-1">
+                        Discover, join, and collaborate with regional Samaj communities & local chapters.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowRegisterCommunity(true)}
+                      className="px-5 py-2.5 text-xs bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95 transition cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4 stroke-[3]" /> Register Community
+                    </button>
                   </div>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {communityList.slice(0, 12).map((c, i) => (
-                      <div key={i} className="bg-white border border-[#EBE3DB] rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md transition">
-                        <div className="h-28 bg-[#FAF3EC] relative flex items-center justify-center overflow-hidden">
-                          <img src={c.cover} className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                          <div className="absolute top-2 right-2 bg-black/40 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                            {c.type}
-                          </div>
-                        </div>
-                        <div className="p-4 flex-1 flex flex-col justify-between">
-                          <div>
-                            <h3 className="font-bold text-sm text-[#3E2723]">{c.name}</h3>
-                            <p className="text-[10px] text-warm-muted mt-1">🏘️ {c.village}, {c.district}</p>
-                          </div>
-                          <div className="flex items-center justify-between border-t border-[#F3E8DE] mt-4 pt-3">
-                            <span className="text-xs font-semibold">{c.member_count} Members</span>
-                            <button
-                              onClick={() => {
-                                const copy = [...communityList];
-                                copy[i].joined = !copy[i].joined;
-                                copy[i].member_count = copy[i].joined ? copy[i].member_count + 1 : copy[i].member_count - 1;
-                                setCommunityList(copy);
-                              }}
-                              className={`text-xs px-3.5 py-1.5 rounded-full font-semibold transition ${c.joined
-                                ? "bg-emerald-100 text-emerald-700 flex items-center gap-1"
-                                : "bg-[#F97316] text-white hover:bg-[#EA580C]"
-                                }`}
-                            >
-                              {c.joined ? <><Check className="w-3.5 h-3.5" /> Joined</> : "Join"}
-                            </button>
-                          </div>
-                        </div>
+
+                  {/* Filter & Search Bar */}
+                  <div className="bg-white border border-[#EBE3DB] rounded-3xl p-5 shadow-sm space-y-4">
+                    <div className="flex flex-col md:flex-row gap-3">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C6D58]" />
+                        <input
+                          type="text"
+                          value={communitySearch}
+                          onChange={(e) => setCommunitySearch(e.target.value)}
+                          placeholder="Search community by name, district, village, or state..."
+                          className="w-full pl-11 pr-4 py-3 rounded-2xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316] text-xs font-semibold text-[#3E2723] transition"
+                        />
                       </div>
-                    ))}
+                      <select
+                        value={communityTypeFilter}
+                        onChange={(e) => setCommunityTypeFilter(e.target.value)}
+                        className="px-4 py-3 rounded-2xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316] text-xs font-bold text-[#5C4033] cursor-pointer"
+                      >
+                        <option value="All">All Types (Super & Subsidiary)</option>
+                        <option value="Super">Super Community (Apex)</option>
+                        <option value="Subsidiary">Subsidiary (Local Chapter)</option>
+                      </select>
+                    </div>
+
+                    {/* Quick Filters */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+                      <span className="text-[11px] font-bold text-warm-muted uppercase tracking-wider flex items-center gap-1 mr-1">
+                        <Filter className="w-3 h-3 text-[#F97316]" /> Type:
+                      </span>
+                      {["All", "Super", "Subsidiary"].map(tType => (
+                        <button
+                          key={tType}
+                          onClick={() => setCommunityTypeFilter(tType)}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                            communityTypeFilter === tType
+                              ? "bg-[#F97316] text-white shadow-xs"
+                              : "bg-[#FFF8F2] text-[#5C4033] border border-[#EBE3DB] hover:bg-[#FDF2E9]"
+                          }`}
+                        >
+                          {tType === "All" ? "All Communities" : tType}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Communities Grid */}
+                  {loading ? (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {[1, 2, 3, 4, 5, 6].map(n => (
+                        <div key={n} className="bg-white border border-[#EBE3DB] rounded-3xl p-4 h-64 animate-pulse space-y-3">
+                          <div className="h-28 bg-amber-100/50 rounded-2xl" />
+                          <div className="h-4 bg-amber-100/50 rounded-lg w-3/4" />
+                          <div className="h-3 bg-amber-100/50 rounded-lg w-1/2" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : filteredCommunities.length === 0 ? (
+                    <div className="bg-white border border-[#EBE3DB] rounded-3xl p-12 text-center space-y-3">
+                      <div className="w-16 h-16 rounded-full bg-amber-50 text-[#F97316] flex items-center justify-center mx-auto text-2xl font-bold">🏘️</div>
+                      <h3 className="font-extrabold text-base text-[#3E2723]">No Communities Found</h3>
+                      <p className="text-xs text-warm-muted max-w-sm mx-auto">
+                        No communities matched your search criteria. Try clearing search or changing type filters.
+                      </p>
+                      <button
+                        onClick={() => { setCommunitySearch(""); setCommunityTypeFilter("All"); }}
+                        className="px-4 py-2 bg-[#F97316] text-white text-xs font-bold rounded-xl hover:bg-[#EA580C] transition cursor-pointer"
+                      >
+                        Reset Filters
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {filteredCommunities.map((c: any, i: number) => (
+                        <div 
+                          key={c.id || i} 
+                          className="bg-white border border-[#EBE3DB] rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-lg hover:border-[#F97316]/50 transition duration-300 group"
+                        >
+                          <div 
+                            onClick={() => setSelectedCommunityDetails(c)}
+                            className="h-32 bg-[#FAF3EC] relative flex items-center justify-center overflow-hidden cursor-pointer"
+                          >
+                            <img 
+                              src={c.cover || c.cover_url || "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60"} 
+                              alt={c.name}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60";
+                              }}
+                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                            
+                            <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-white/20 uppercase tracking-wider">
+                              {c.type || "Community"}
+                            </div>
+
+                            <div className="absolute bottom-2.5 left-3 right-3 text-white">
+                              <h3 className="font-extrabold text-sm leading-tight text-white drop-shadow-sm group-hover:text-[#FFEDD5] transition">{c.name}</h3>
+                            </div>
+                          </div>
+
+                          <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                            <div>
+                              <p className="text-xs text-warm-muted flex items-center gap-1.5 font-medium">
+                                <MapPin className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
+                                {c.village ? `${c.village}, ${c.district}` : c.district || c.state || "Gujarat"}
+                              </p>
+                              {c.desc && (
+                                <p className="text-[11px] text-[#5C4033]/80 mt-2 line-clamp-2 leading-relaxed">
+                                  {c.desc}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-between border-t border-[#F3E8DE] pt-3">
+                              <span className="text-xs font-bold text-[#3E2723] flex items-center gap-1">
+                                <Users className="w-3.5 h-3.5 text-[#F97316]" /> {c.member_count || 150} Members
+                              </span>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedCommunityDetails(c);
+                                  }}
+                                  className="text-xs px-2.5 py-1.5 rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] text-[#5C4033] font-bold hover:bg-[#FDF2E9] hover:border-[#F97316] transition cursor-pointer"
+                                  title="View Details"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const nextJoined = !c.joined;
+                                    try {
+                                      if (c.id) {
+                                        if (nextJoined) {
+                                          await api.joinCommunity(c.id).catch(() => null);
+                                        } else {
+                                          await api.leaveCommunity(c.id).catch(() => null);
+                                        }
+                                      }
+                                    } catch (err) {
+                                      console.warn("API join/leave failed", err);
+                                    }
+                                    setCommunityList(prev => prev.map((item, idx) => {
+                                      if ((item.id && item.id === c.id) || idx === i) {
+                                        return {
+                                          ...item,
+                                          joined: nextJoined,
+                                          member_count: nextJoined ? (item.member_count || 150) + 1 : Math.max(1, (item.member_count || 150) - 1)
+                                        };
+                                      }
+                                      return item;
+                                    }));
+                                    if (nextJoined) {
+                                      toast.success(`Joined ${c.name}!`);
+                                    } else {
+                                      toast.info(`Left ${c.name}.`);
+                                    }
+                                  }}
+                                  className={`text-xs px-3 py-1.5 rounded-xl font-bold transition shadow-xs cursor-pointer ${
+                                    c.joined
+                                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200 flex items-center gap-1"
+                                      : "bg-[#F97316] text-white hover:bg-[#EA580C]"
+                                  }`}
+                                >
+                                  {c.joined ? <><Check className="w-3.5 h-3.5" /> Joined</> : "Join"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
               )}
 
@@ -2585,6 +2830,192 @@ function DashboardStyleHome() {
               <X className="w-4 h-4" />
             </button>
             <img src={selectedPhoto} alt="Gallery view" className="max-w-full max-h-[75vh] object-contain rounded-2xl border border-white/10" />
+          </motion.div>
+        </div>
+      )}
+
+      {/* Community Details Modal */}
+      {selectedCommunityDetails && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-lg w-full overflow-hidden relative shadow-2xl text-left">
+            <button onClick={() => setSelectedCommunityDetails(null)} className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+            <div className="h-36 relative bg-amber-100 flex items-center justify-center overflow-hidden">
+              <img 
+                src={selectedCommunityDetails.cover || selectedCommunityDetails.cover_url || "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60"} 
+                alt="" 
+                onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60"; }}
+                className="w-full h-full object-cover" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <div className="absolute bottom-3 left-5 right-5 text-white">
+                <span className="text-[10px] font-extrabold bg-[#F97316] text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  {selectedCommunityDetails.type || "Community"}
+                </span>
+                <h3 className="font-extrabold text-xl text-white mt-1 drop-shadow-md">{selectedCommunityDetails.name}</h3>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-[#FFF8F2] rounded-2xl border border-[#EBE3DB]/60">
+                  <span className="text-warm-muted text-[10px] uppercase font-bold block mb-0.5">Location</span>
+                  <span className="font-semibold text-[#3E2723] flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-[#F97316]" /> {selectedCommunityDetails.village ? `${selectedCommunityDetails.village}, ${selectedCommunityDetails.district}` : selectedCommunityDetails.district || selectedCommunityDetails.state || "Gujarat"}
+                  </span>
+                </div>
+                <div className="p-3 bg-[#FFF8F2] rounded-2xl border border-[#EBE3DB]/60">
+                  <span className="text-warm-muted text-[10px] uppercase font-bold block mb-0.5">Total Members</span>
+                  <span className="font-semibold text-[#3E2723] flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5 text-[#F97316]" /> {selectedCommunityDetails.member_count || 150} Members
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <h4 className="text-xs font-bold text-[#5C4033]">About Community</h4>
+                <p className="text-xs text-[#5C4033]/90 leading-relaxed bg-[#FFF8F2] p-4 rounded-2xl border border-[#EBE3DB]/60">
+                  {selectedCommunityDetails.desc || selectedCommunityDetails.description || "Official community organization providing platform for family registration, events, matrimonials, and social welfare programs."}
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setSelectedCommunityDetails(null)}
+                  className="flex-1 py-2.5 bg-[#FAF3EC] text-[#5C4033] font-bold text-xs rounded-xl hover:bg-[#FDF2E9] transition cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={async () => {
+                    const nextJoined = !selectedCommunityDetails.joined;
+                    try {
+                      if (selectedCommunityDetails.id) {
+                        if (nextJoined) {
+                          await api.joinCommunity(selectedCommunityDetails.id).catch(() => null);
+                        } else {
+                          await api.leaveCommunity(selectedCommunityDetails.id).catch(() => null);
+                        }
+                      }
+                    } catch (e) {
+                      console.warn(e);
+                    }
+                    setCommunityList(prev => prev.map(c => c.name === selectedCommunityDetails.name ? { ...c, joined: nextJoined, member_count: nextJoined ? (c.member_count || 150) + 1 : Math.max(1, (c.member_count || 150) - 1) } : c));
+                    setSelectedCommunityDetails(prev => ({ ...prev, joined: nextJoined, member_count: nextJoined ? (prev.member_count || 150) + 1 : Math.max(1, (prev.member_count || 150) - 1) }));
+                    if (nextJoined) {
+                      toast.success(`Joined ${selectedCommunityDetails.name}!`);
+                    } else {
+                      toast.info(`Left ${selectedCommunityDetails.name}.`);
+                    }
+                  }}
+                  className={`flex-1 py-2.5 font-bold text-xs rounded-xl shadow-md transition cursor-pointer ${
+                    selectedCommunityDetails.joined
+                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                      : "bg-[#F97316] text-white hover:bg-[#EA580C]"
+                  }`}
+                >
+                  {selectedCommunityDetails.joined ? "Joined ✓" : "Join Community"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Register Community Modal */}
+      {showRegisterCommunity && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-md w-full p-6 space-y-4 relative shadow-2xl text-left">
+            <button onClick={() => setShowRegisterCommunity(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FAF3EC] flex items-center justify-center hover:bg-[#FDF2E9] hover:text-[#F97316] transition cursor-pointer">
+              <X className="w-4 h-4 text-[#5C4033]" />
+            </button>
+            <div>
+              <h3 className="font-extrabold text-lg text-[#3E2723]">Register New Community</h3>
+              <p className="text-xs text-[#8C6D58]">Add a new Samaj community or local chapter to the platform</p>
+            </div>
+
+            <form onSubmit={handleRegisterCommunitySubmit} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Community Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Surat Leva Patel Samaj"
+                  value={newCommunity.name}
+                  onChange={(e) => setNewCommunity({ ...newCommunity, name: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#5C4033]">Community Type</label>
+                  <select
+                    value={newCommunity.type}
+                    onChange={(e) => setNewCommunity({ ...newCommunity, type: e.target.value })}
+                    className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                  >
+                    <option value="Super">Super (Apex)</option>
+                    <option value="Subsidiary">Subsidiary (Local Chapter)</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#5C4033]">District</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ahmedabad"
+                    value={newCommunity.district}
+                    onChange={(e) => setNewCommunity({ ...newCommunity, district: e.target.value })}
+                    className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#5C4033]">Taluka / Area</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Navrangpura"
+                    value={newCommunity.village}
+                    onChange={(e) => setNewCommunity({ ...newCommunity, village: e.target.value })}
+                    className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#5C4033]">State</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Gujarat"
+                    value={newCommunity.state}
+                    onChange={(e) => setNewCommunity({ ...newCommunity, state: e.target.value })}
+                    className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#5C4033]">Description / Purpose</label>
+                <textarea
+                  rows={2}
+                  placeholder="Brief summary of the community goals..."
+                  value={newCommunity.desc}
+                  onChange={(e) => setNewCommunity({ ...newCommunity, desc: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316] resize-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmittingCommunity}
+                className="w-full mt-2 py-2.5 bg-[#F97316] text-white text-xs font-bold rounded-xl hover:bg-[#EA580C] shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isSubmittingCommunity && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isSubmittingCommunity ? "Registering..." : "Register Community"}
+              </button>
+            </form>
           </motion.div>
         </div>
       )}
