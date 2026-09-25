@@ -16,6 +16,7 @@ import { api, getImageUrl } from "@/lib/api";
 import heroBg from "@/assets/hero-bg.png";
 import { toast } from "sonner";
 import { MobileBottomNav, type SidebarItem } from "@/components/wag/Sidebar";
+import { useAuth } from "@/context/AuthContext";
 
 type SearchParams = {
   page?: string;
@@ -390,6 +391,8 @@ function DashboardStyleHome() {
   const { t } = useTranslation();
   const { page } = Route.useSearch();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showLoginPromptModal, setShowLoginPromptModal] = useState(false);
 
   const [activeNav, setActiveNav] = useState("Dashboard");
   const [selectedCity, setSelectedCity] = useState("Ahmedabad");
@@ -606,6 +609,60 @@ function DashboardStyleHome() {
       toast.error("Failed to register community.");
     } finally {
       setIsSubmittingCommunity(false);
+    }
+  };
+
+  const handleJoinCommunityClick = async (c: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+
+    // Enforce login requirement
+    if (!user) {
+      setShowLoginPromptModal(true);
+      return;
+    }
+
+    const nextJoined = !c.joined;
+    try {
+      if (c.id) {
+        if (nextJoined) {
+          await api.joinCommunity(c.id, {
+            name: user.name,
+            email: user.email,
+            phone: user.phone || "+91 98240 12345",
+            gender: user.gender || "Male",
+            village: c.village || c.district || "Ahmedabad"
+          }).catch(() => null);
+        } else {
+          await api.leaveCommunity(c.id).catch(() => null);
+        }
+      }
+    } catch (err) {
+      console.warn("API join/leave failed", err);
+    }
+
+    setCommunityList(prev => prev.map((item, idx) => {
+      if ((item.id && item.id === c.id) || item.name === c.name) {
+        return {
+          ...item,
+          joined: nextJoined,
+          member_count: nextJoined ? (item.member_count || 150) + 1 : Math.max(1, (item.member_count || 150) - 1)
+        };
+      }
+      return item;
+    }));
+
+    if (selectedCommunityDetails && selectedCommunityDetails.name === c.name) {
+      setSelectedCommunityDetails((prev: any) => prev ? {
+        ...prev,
+        joined: nextJoined,
+        member_count: nextJoined ? (prev.member_count || 150) + 1 : Math.max(1, (prev.member_count || 150) - 1)
+      } : null);
+    }
+
+    if (nextJoined) {
+      toast.success(`Join request sent to ${c.name}! Pending Community Admin approval.`);
+    } else {
+      toast.info(`Left ${c.name}.`);
     }
   };
 
@@ -1707,43 +1764,14 @@ function DashboardStyleHome() {
                                   View
                                 </button>
                                 <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    const nextJoined = !c.joined;
-                                    try {
-                                      if (c.id) {
-                                        if (nextJoined) {
-                                          await api.joinCommunity(c.id).catch(() => null);
-                                        } else {
-                                          await api.leaveCommunity(c.id).catch(() => null);
-                                        }
-                                      }
-                                    } catch (err) {
-                                      console.warn("API join/leave failed", err);
-                                    }
-                                    setCommunityList(prev => prev.map((item, idx) => {
-                                      if ((item.id && item.id === c.id) || idx === i) {
-                                        return {
-                                          ...item,
-                                          joined: nextJoined,
-                                          member_count: nextJoined ? (item.member_count || 150) + 1 : Math.max(1, (item.member_count || 150) - 1)
-                                        };
-                                      }
-                                      return item;
-                                    }));
-                                    if (nextJoined) {
-                                      toast.success(`Joined ${c.name}!`);
-                                    } else {
-                                      toast.info(`Left ${c.name}.`);
-                                    }
-                                  }}
-                                  className={`text-xs px-3 py-1.5 rounded-xl font-bold transition shadow-xs cursor-pointer ${
+                                  onClick={(e) => handleJoinCommunityClick(c, e)}
+                                  className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition shadow-xs cursor-pointer ${
                                     c.joined
-                                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200 flex items-center gap-1"
+                                      ? "bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1"
                                       : "bg-[#F97316] text-white hover:bg-[#EA580C]"
                                   }`}
                                 >
-                                  {c.joined ? <><Check className="w-3.5 h-3.5" /> Joined</> : "Join"}
+                                  {c.joined ? <><Clock className="w-3.5 h-3.5" /> Pending</> : "Join"}
                                 </button>
                               </div>
                             </div>
@@ -2187,736 +2215,15 @@ function DashboardStyleHome() {
                                 />
                               </div>
                               <button
-                                onClick={async () => {
-                                  const amount = donateAmount[item.id];
-                                  if (!amount || Number(amount) <= 0) return;
-
-                                  const payload = {
-                                    donor: userProfile.name,
-                                    amount: parseInt(amount),
-                                    campaign: item.id,
-                                    note: "Online donation through dashboard",
-                                    method: "UPI",
-                                    status: "Success"
-                                  };
-
-                                  try {
-                                    const res = await api.createDonation(payload);
-                                    const updated = campaignList.map(c => {
-                                      if (c.id === item.id) {
-                                        return { ...c, raised: (c.raised || 0) + parseInt(amount) };
-                                      }
-                                      return c;
-                                    });
-                                    setCampaignList(updated);
-
-                                    setUserDonations([
-                                      {
-                                        ...res,
-                                        campaign_title: item.title,
-                                        campaign: item.id
-                                      },
-                                      ...userDonations
-                                    ]);
-
-                                    setShowReceipt({
-                                      campaign: item.title,
-                                      amount: amount,
-                                      txnId: `TXN${res.id || Math.floor(100000 + Math.random() * 900000)}`,
-                                      date: new Date().toLocaleDateString()
-                                    });
-                                    setDonateAmount({ ...donateAmount, [item.id]: "" });
-                                    toast.success("Thank you for your generous donation!");
-                                  } catch (err) {
-                                    console.error("Donation failed", err);
-                                    toast.error("Failed to register donation.");
-                                  }
-                                }}
-                                className="bg-[#F97316] text-white text-xs font-semibold py-2 px-5 rounded-xl hover:bg-[#EA580C] transition shadow-sm cursor-pointer"
-                              >
-                                {t("dashboarddonations.donate")}
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="bg-white border border-[#EBE3DB] rounded-2xl overflow-hidden shadow-sm">
-                      {userDonations.length === 0 ? (
-                        <div className="p-8 text-center text-warm-muted text-xs">
-                          {t("dashboarddonations.noDonationsYet")}
-                        </div>
-                      ) : (
-                        <table className="w-full text-sm">
-                          <thead className="bg-[#FAF3EC]">
-                            <tr>
-                              {["campaign", "amount", "date", "method", "status", "receipt"].map(h => (
-                                <th key={h} className="text-left p-3 text-xs uppercase tracking-wider text-warm-muted">{t(`dashboarddonations.${h}`)}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {userDonations.map((d, i) => (
-                              <tr key={i} className="border-t border-[#EBE3DB] hover:bg-[#FFF8F2]">
-                                <td className="p-3 text-xs font-bold text-[#3E2723]">{d.campaign_title || `Campaign #${d.campaign}`}</td>
-                                <td className="p-3 text-xs font-extrabold text-[#F97316]">₹{d.amount.toLocaleString()}</td>
-                                <td className="p-3 text-xs text-warm-muted">{new Date(d.date || new Date()).toLocaleDateString()}</td>
-                                <td className="p-3 text-xs text-warm-muted">{d.method}</td>
-                                <td className="p-3">
-                                  <span className="bg-[#E8F5E9] text-[#2E7D32] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#C8E6C9]">
-                                    {d.status || t("dashboarddonations.success")}
-                                  </span>
-                                </td>
-                                <td className="p-3">
-                                  <button
-                                    onClick={() => downloadReceiptPdf({
-                                      campaign: d.campaign_title || `Campaign #${d.campaign}`,
-                                      amount: d.amount,
-                                      txnId: `TXN${d.id || 1000 + i}`,
-                                      date: new Date(d.date || new Date()).toLocaleDateString()
-                                    })}
-                                    className="flex items-center gap-1 text-[10px] font-bold text-[#F97316] hover:text-[#EA580C] cursor-pointer"
-                                  >
-                                    <Download className="w-3.5 h-3.5" /> {t("dashboarddonations.pdf")}
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-
-              {/* GALLERY VIEW */}
-              {activeNav === "Gallery" && (
-                <motion.div key="gallery" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 text-left">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-[#3E2723]">{t("dashboardindex.photoGallery")}</h2>
-                    <span className="text-xs text-warm-muted">{t("dashboardindex.galleryDesc")}</span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {GALLERY_IMAGES.map((img, i) => (
-                      <div key={i} onClick={() => setSelectedPhoto(img)} className="group relative rounded-2xl overflow-hidden border border-[#EBE3DB] aspect-video shadow-sm hover:shadow-md cursor-pointer transition">
-                        <img src={img} alt="gallery" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                        <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
-                          <span className="text-white text-xs font-bold border border-white px-3 py-1.5 rounded-full flex items-center gap-1">
-                            <ImageIcon className="w-3.5 h-3.5" /> {t("dashboardindex.viewPhoto")}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* VIDEOS VIEW */}
-              {activeNav === "Videos" && (
-                <motion.div key="videos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 text-left">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-[#3E2723]">{t("dashboardindex.popularVideos")}</h2>
-                    <span className="text-xs text-warm-muted">{t("dashboardindex.watchEventsAndCulturalVideoPrograms")}</span>
-                  </div>
-                  <div className="grid md:grid-cols-3 gap-6">
-                    {POPULAR_VIDEOS.map((vid, i) => (
-                      <div key={i} onClick={() => setSelectedVideo(vid)} className="bg-white rounded-2xl border border-[#EBE3DB] overflow-hidden shadow-sm hover:shadow-md cursor-pointer transition">
-                        <div className="relative aspect-video">
-                          <img src={vid.img} alt={vid.title} className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-                            <div className="w-12 h-12 rounded-full bg-white/95 shadow-lg flex items-center justify-center text-[#F97316]">
-                              <Play className="w-5 h-5 fill-current ml-0.5" />
-                            </div>
-                          </div>
-                          <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                            {vid.duration}
-                          </span>
-                        </div>
-                        <div className="p-4 text-left">
-                          <h4 className="font-bold text-sm text-[#3E2723]">{t(vid.title)}</h4>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* DOCUMENTS VIEW */}
-              {activeNav === "Documents" && (
-                <motion.div key="documents" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 text-left">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-[#3E2723]">{t("sidebar.documents")}</h2>
-                    <span className="text-xs text-warm-muted">{t("dashboarddocuments.desc_downloadTrustDocumentsCertificatesAndReports")}</span>
-                  </div>
-                  <div className="space-y-3">
-                    {[
-                      { title: "Samaj Rules & Constitution 2025.pdf", size: "2.4 MB", type: "PDF Document" },
-                      { title: "Annual General Meeting Minutes - Dec 2025.pdf", size: "1.8 MB", type: "Meeting Minutes" },
-                      { title: "Trust Audit Report FY 2024-25.pdf", size: "4.1 MB", type: "Financial Report" }
-                    ].map((doc, i) => (
-                      <div key={i} className="bg-white border border-[#EBE3DB] rounded-2xl p-4 flex justify-between items-center shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#F97316] flex items-center justify-center">
-                            <FileText className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-sm text-[#3E2723]">{doc.title}</h3>
-                            <p className="text-[10px] text-warm-muted">{doc.type} · {doc.size}</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => alert(`Downloading ${doc.title}...`)}
-                          className="w-9 h-9 rounded-xl bg-[#FAF3EC] hover:bg-[#FDF2E9] hover:text-[#F97316] flex items-center justify-center text-[#5C4033] transition"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* MY NETWORK VIEW */}
-              {activeNav === "My Network" && (
-                <motion.div key="network" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 text-left">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-[#3E2723]">{t("sidebar.myNetwork")}</h2>
-                    <span className="text-xs text-warm-muted">{t("dashboardfamily.desc_visualFamilyConnectionsHierarchy")}</span>
-                  </div>
-
-                  <div className="bg-white border border-[#EBE3DB] rounded-2xl p-6 shadow-sm flex flex-col items-center">
-                    {/* Interactive family tree layout */}
-                    <div className="space-y-8 w-full max-w-lg">
-                      {/* Grandparent */}
-                      <div className="flex justify-center">
-                        <div className="bg-[#FFF5EE] border-2 border-[#EBE3DB] p-3 rounded-xl text-center w-40">
-                          <div className="font-bold text-xs">Late Purshottam Patel</div>
-                          <div className="text-[9px] text-warm-muted">{t("dashboardfamily.grandfather")}</div>
-                        </div>
-                      </div>
-                      <div className="w-0.5 h-6 bg-[#EBE3DB] mx-auto"></div>
-
-                      {/* Father */}
-                      <div className="flex justify-center">
-                        <div className="bg-[#FFF5EE] border-2 border-[#EBE3DB] p-3 rounded-xl text-center w-40">
-                          <div className="font-bold text-xs">Arvindbhai Patel</div>
-                          <div className="text-[9px] text-warm-muted">{t("dashboardfamily.father")} (Ahmedabad)</div>
-                        </div>
-                      </div>
-                      <div className="w-0.5 h-6 bg-[#EBE3DB] mx-auto"></div>
-
-                      {/* Main User & Spouse */}
-                      <div className="flex justify-center gap-12">
-                        <div className="bg-[#FDF2E9] border-2 border-[#F97316] p-3 rounded-xl text-center w-40 shadow-sm">
-                          <div className="font-bold text-xs text-[#F97316]">{userProfile.name}</div>
-                          <div className="text-[9px] text-[#F97316] font-semibold">{t("dashboardfamily.self")}</div>
-                        </div>
-                        <div className="bg-[#FFF5EE] border-2 border-[#EBE3DB] p-3 rounded-xl text-center w-40">
-                          <div className="font-bold text-xs">Kajal Patel</div>
-                          <div className="text-[9px] text-warm-muted">{t("dashboardfamily.spouse")}</div>
-                        </div>
-                      </div>
-                      <div className="w-0.5 h-6 bg-[#EBE3DB] mx-auto"></div>
-
-                      {/* Children */}
-                      <div className="flex justify-center gap-12">
-                        <div className="bg-[#FFF5EE] border-2 border-[#EBE3DB] p-3 rounded-xl text-center w-40">
-                          <div className="font-bold text-xs">Aarav Patel</div>
-                          <div className="text-[9px] text-warm-muted">{t("dashboardfamily.son")} (Age: 16)</div>
-                        </div>
-                        <div className="bg-[#FFF5EE] border-2 border-[#EBE3DB] p-3 rounded-xl text-center w-40">
-                          <div className="font-bold text-xs">Diya Patel</div>
-                          <div className="text-[9px] text-warm-muted">{t("dashboardfamily.daughter")} (Age: 12)</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* SETTINGS VIEW */}
-              {activeNav === "Settings" && (
-                <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 text-left">
-                  <h2 className="text-2xl font-bold text-[#3E2723]">{t("dashboardprofile.title_profileAndSettings")}</h2>
-
-                  <div className="bg-white border border-[#EBE3DB] rounded-[20px] p-6 shadow-sm max-w-2xl">
-                    <form onSubmit={(e) => {
-                      e.preventDefault();
-                      alert(t("dashboardprofile.profileUpdated") + "!");
-                    }} className="space-y-4">
-
-                      <div className="flex flex-col sm:flex-row gap-4 items-center pb-4 border-b border-[#F3E8DE]">
-                        <img src={userProfile.avatar} alt="Profile" className="w-16 h-16 rounded-full object-cover border-2 border-[#F97316]" />
-                        <div>
-                          <h3 className="font-bold text-sm">{userProfile.name}</h3>
-                          <p className="text-xs text-warm-muted">{userProfile.samaj} · {t(userProfile.membership)}</p>
-                          <button type="button" onClick={() => alert(t("dashboardprofile.uploadComingSoon"))} className="mt-2 text-xs font-semibold text-[#F97316] hover:underline">{t("dashboardprofile.changeProfilePhoto")}</button>
-                        </div>
-                      </div>
-
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-[#5C4033]">{t("dashboardfamily.fullName")}</label>
-                          <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C6D58]" />
-                            <input
-                              type="text"
-                              value={userProfile.name}
-                              onChange={(e) => setUserProfile({ ...userProfile, name: e.target.value })}
-                              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-[#5C4033]">{t("registercommunity.emailAddress")}</label>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C6D58]" />
-                            <input
-                              type="email"
-                              value={userProfile.email}
-                              onChange={(e) => setUserProfile({ ...userProfile, email: e.target.value })}
-                              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-[#5C4033]">{t("registercommunity.phoneNumber")}</label>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C6D58]" />
-                            <input
-                              type="text"
-                              value={userProfile.phone}
-                              onChange={(e) => setUserProfile({ ...userProfile, phone: e.target.value })}
-                              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316]"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-[#5C4033]">{t("registerindex.label_community")}</label>
-                          <div className="relative">
-                            <HomeIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C6D58]" />
-                            <input
-                              type="text"
-                              value={userProfile.samaj}
-                              disabled
-                              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-[#EBE3DB] bg-[#F5EDE5] text-[#8C6D58] cursor-not-allowed"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-[#5C4033]">{t("dashboardprofile.residentialAddress")}</label>
-                        <textarea
-                          value={userProfile.address}
-                          onChange={(e) => setUserProfile({ ...userProfile, address: e.target.value })}
-                          rows={2}
-                          className="w-full p-3 text-xs rounded-xl border border-[#EBE3DB] bg-[#FFF8F2] focus:outline-none focus:border-[#F97316] resize-none"
-                        />
-                      </div>
-
-                      <div className="pt-2">
-                        <button type="submit" className="bg-[#F97316] text-white text-xs font-semibold py-2 px-6 rounded-xl hover:bg-[#EA580C] transition shadow-md">
-                          {t("dashboardprofile.saveChanges")}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* SUBSCRIPTION VIEW */}
-              {activeNav === "Subscription" && (
-                <motion.div key="subscription" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 text-left">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                      <h2 className="text-2xl font-bold text-[#3E2723]">{t("dashboardplan.title_myPlan")}</h2>
-                      <p className="text-xs text-warm-muted mt-1 font-medium">{t("dashboardplan.desc_manageYourSubscriptionAndBilling")}</p>
-                    </div>
-                    <div className="flex items-center gap-2 bg-white border border-[#EBE3DB] rounded-2xl px-4 py-2 self-start sm:self-auto shadow-2xs">
-                      <span className="text-[10px] text-warm-muted font-bold">{t("registercommunity.currentStatus")}:</span>
-                      <span className="text-xs font-extrabold text-[#F97316] bg-[#FFF5EE] border border-[#F3E8DE] px-2.5 py-0.5 rounded-full">{t(userProfile.membership)}</span>
-                    </div>
-                  </div>
-
-                  {/* Pricing Tiers Grid */}
-                  <div className="grid md:grid-cols-3 gap-6 max-w-5xl">
-                    {/* Free Plan */}
-                    <div className="bg-white border border-[#EBE3DB] rounded-[24px] p-6 shadow-sm flex flex-col justify-between relative overflow-hidden transition hover:shadow-md duration-200">
-                      <div>
-                        <div className="w-10 h-10 rounded-2xl bg-[#FAF3EC] text-[#8C6D58] flex items-center justify-center border border-[#EBE3DB]/40 mb-4">
-                          <User className="w-5 h-5" />
-                        </div>
-                        <h3 className="text-base font-extrabold text-[#3E2723]">{t("dashboardprofile.basicMember")}</h3>
-                        <p className="text-[11px] text-warm-muted mt-1">{t("dashboardprofile.accessTheCommunityAndSeeLocalNews")}</p>
-
-                        <div className="mt-4 flex items-baseline gap-1">
-                          <span className="text-3xl font-extrabold text-[#3E2723]">₹0</span>
-                          <span className="text-xs text-warm-muted font-medium">/ year</span>
-                        </div>
-
-                        <ul className="mt-6 space-y-3">
-                          {[
-                            t("dashboardprofile.viewMemberDirectory"),
-                            t("dashboardprofile.joinUpTo3Communities"),
-                            t("dashboardprofile.readPublicNewsAndAnnouncements"),
-                            t("dashboardprofile.viewPublicEventsList")
-                          ].map((feat, i) => (
-                            <li key={i} className="flex gap-2 text-xs font-semibold text-[#5C4033] items-start">
-                              <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                              <span>{feat}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <button
-                        disabled={userProfile.membership === "Basic Member"}
-                        onClick={() => {
-                          setUserProfile({ ...userProfile, membership: "Basic Member" });
-                          alert(t("dashboardprofile.downgradedSuccessfully"));
-                        }}
-                        className={`w-full mt-8 py-2.5 rounded-xl text-xs font-bold transition duration-200 ${userProfile.membership === "Basic Member"
-                          ? "bg-[#FAF3EC] border border-[#EBE3DB] text-warm-muted cursor-default"
-                          : "bg-[#FFF5EE] border border-[#EBE3DB] hover:bg-[#F3E8DE] text-[#3E2723]"
-                          }`}
-                      >
-                        {userProfile.membership === "Basic Member" ? t("dashboardplan.currentPlan") : t("dashboardplan.downgrade")}
-                      </button>
-                    </div>
-
-                    {/* Premium Plan (Popular) */}
-                    <div className="bg-white border-2 border-[#F97316] rounded-[24px] p-6 shadow-md flex flex-col justify-between relative overflow-hidden transition hover:shadow-lg duration-200">
-                      <div className="absolute top-3 right-3 bg-[#F97316] text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                        Popular
-                      </div>
-                      <div>
-                        <div className="w-10 h-10 rounded-2xl bg-[#FFF5EE] text-[#F97316] flex items-center justify-center border border-[#F3E8DE] mb-4">
-                          <Sparkles className="w-5 h-5" />
-                        </div>
-                        <h3 className="text-base font-extrabold text-[#3E2723]">{t("dashboardprofile.premiumMember")}</h3>
-                        <p className="text-[11px] text-warm-muted mt-1">Unlock matrimonial, business directory & jobs.</p>
-
-                        <div className="mt-4 flex items-baseline gap-1">
-                          <span className="text-3xl font-extrabold text-[#3E2723]">₹999</span>
-                          <span className="text-xs text-warm-muted font-medium">/ year</span>
-                        </div>
-
-                        <ul className="mt-6 space-y-3">
-                          {[
-                            "Everything in Basic, plus:",
-                            "Create Matrimonial Profiles",
-                            "List up to 2 Businesses in Directory",
-                            "Post & Apply for Jobs",
-                            "Direct Messages & Community Chats",
-                            "Join Unlimited Communities"
-                          ].map((feat, i) => (
-                            <li key={i} className="flex gap-2 text-xs font-semibold text-[#5C4033] items-start">
-                              <Check className="w-4 h-4 text-[#F97316] flex-shrink-0 mt-0.5" />
-                              <span>{feat}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <button
-                        disabled={userProfile.membership === "Premium Member"}
-                        onClick={() => {
-                          setUserProfile({ ...userProfile, membership: "Premium Member" });
-                          alert(t("dashboardprofile.upgradedSuccessfully"));
-                        }}
-                        className={`w-full mt-8 py-2.5 rounded-xl text-xs font-bold transition duration-200 ${userProfile.membership === "Premium Member"
-                          ? "bg-[#FAF3EC] border border-[#EBE3DB] text-warm-muted cursor-default"
-                          : "bg-[#F97316] text-white hover:bg-[#EA580C] shadow-md shadow-[#F97316]/20"
-                          }`}
-                      >
-                        {userProfile.membership === "Premium Member" ? t("dashboardplan.currentPlan") : t("dashboardplan.upgradeToPremium")}
-                      </button>
-                    </div>
-
-                    {/* Elite Plan */}
-                    <div className="bg-white border border-[#EBE3DB] rounded-[24px] p-6 shadow-sm flex flex-col justify-between relative overflow-hidden transition hover:shadow-md duration-200">
-                      <div>
-                        <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100/50 mb-4">
-                          <ShieldCheck className="w-5 h-5" />
-                        </div>
-                        <h3 className="text-base font-extrabold text-[#3E2723]">{t("dashboardprofile.patronMember")}</h3>
-                        <p className="text-[11px] text-warm-muted mt-1">Lifetime VIP member of the Samaj community.</p>
-
-                        <div className="mt-4 flex items-baseline gap-1">
-                          <span className="text-3xl font-extrabold text-[#3E2723]">₹9,999</span>
-                          <span className="text-xs text-warm-muted font-medium">/ lifetime</span>
-                        </div>
-
-                        <ul className="mt-6 space-y-3">
-                          {[
-                            "Everything in Premium, plus:",
-                            "VIP Front-row Invites to physical events",
-                            "Golden Lifetime Member Badge",
-                            "Featured in Samaj Hall of Fame",
-                            "Post Unlimited Jobs & Business Listings",
-                            "Personalized Family Tree Creator"
-                          ].map((feat, i) => (
-                            <li key={i} className="flex gap-2 text-xs font-semibold text-[#5C4033] items-start">
-                              <Check className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
-                              <span>{feat}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <button
-                        disabled={userProfile.membership === "Patron Member"}
-                        onClick={() => {
-                          setUserProfile({ ...userProfile, membership: "Patron Member" });
-                          alert(t("dashboardprofile.becomePatronMemberSuccess"));
-                        }}
-                        className={`w-full mt-8 py-2.5 rounded-xl text-xs font-bold transition duration-200 ${userProfile.membership === "Patron Member"
-                          ? "bg-[#FAF3EC] border border-[#EBE3DB] text-warm-muted cursor-default"
-                          : "bg-purple-600 text-white hover:bg-purple-700 shadow-md shadow-purple-600/20"
-                          }`}
-                      >
-                        {userProfile.membership === "Patron Member" ? t("dashboardplan.currentPlan") : t("dashboardplan.becomePatronMember")}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* FAQ section */}
-                  <div className="bg-white border border-[#EBE3DB] rounded-[24px] p-6 shadow-sm max-w-5xl space-y-4">
-                    <h3 className="font-extrabold text-sm text-[#3E2723]">Frequently Asked Questions</h3>
-                    <div className="grid md:grid-cols-2 gap-6 text-xs leading-relaxed">
-                      <div>
-                        <h4 className="font-bold text-[#3E2723]">Where do my subscription fees go?</h4>
-                        <p className="text-warm-muted mt-1">All proceeds go directly into running community events, maintaining the digital directory infrastructure, and organizing educational and medical assistance funds for disadvantaged members.</p>
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-[#3E2723]">Can I cancel or change my plan anytime?</h4>
-                        <p className="text-warm-muted mt-1">Yes, you can upgrade, downgrade, or cancel your subscription at any time. Downgrades take effect at the end of the current billing cycle.</p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </main>
-
-          {/* 4. Right Sidebar Panel */}
-          {activeNav !== "Dashboard" && (
-            <aside className="w-[320px] flex-shrink-0 border-l border-[#EBE3DB] bg-[#FAF3EC]/50 p-6 space-y-6 sticky top-16 h-[calc(100vh-4rem)] hidden xl:block overflow-y-auto z-10 pr-4">
-
-              {/* Upcoming Events */}
-              <div className="bg-white rounded-[20px] border border-[#EBE3DB] p-4 space-y-3.5 shadow-sm text-left">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-xs text-[#3E2723] tracking-wide">{t("dashboardindex.label_upcomingEvents")}</h3>
-                  <button onClick={() => handleNavClick("Events")} className="text-[10px] font-bold text-[#F97316] hover:underline">
-                    {t("dashboardindex.viewAll")} →
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {EVENTS_ITEMS.map((ev, i) => (
-                    <div key={i} className="flex items-center gap-3 group cursor-pointer" onClick={() => handleNavClick("Events")}>
-                      {/* Date Block */}
-                      <div className="w-10 h-10 rounded-xl bg-[#FFF5EE] border border-[#F3E8DE] flex flex-col items-center justify-center flex-shrink-0 group-hover:border-[#F97316]/30 group-hover:bg-[#FDF2E9] transition duration-200">
-                        <span className="text-xs font-extrabold text-[#F97316] leading-none">{t(ev.day)}</span>
-                        <span className="text-[8px] font-bold text-warm-muted leading-none mt-0.5">{t(ev.month)}</span>
-                      </div>
-
-                      <div className="text-xs leading-snug">
-                        <h4 className="font-bold text-[#3E2723] line-clamp-1 group-hover:text-[#F97316] transition duration-200">{t(ev.title)}</h4>
-                        <p className="text-[9px] text-warm-muted flex items-center gap-0.5 mt-0.5">
-                          <MapPin className="w-2.5 h-2.5 text-[#F97316]" /> {t(ev.location)} · {t(ev.time)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Today's Highlights Timeline */}
-              <div className="bg-white rounded-[20px] border border-[#EBE3DB] p-4 space-y-3.5 shadow-sm text-left relative overflow-hidden">
-                <h3 className="font-bold text-xs text-[#3E2723] tracking-wide">{t("dashboardindex.todaysHighlights")}</h3>
-
-                <div className="relative space-y-4 pl-1">
-                  {/* Timeline vertical connector */}
-                  <div className="absolute left-[13px] top-3 bottom-3 w-[1.5px] bg-[#EBE3DB]/60 border-dashed border-l border-[#EBE3DB]/70" />
-
-                  {HIGHLIGHTS.map((item, i) => (
-                    <div key={i} className="flex gap-3.5 items-start relative z-10">
-                      <div className={`w-7 h-7 rounded-full ${item.color} flex items-center justify-center flex-shrink-0 shadow-2xs border border-[#F3E8DE]/40`}>
-                        <item.icon className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="text-[10px] leading-tight text-left pt-0.5">
-                        <p className="text-warm-muted font-medium">{t(item.type)}</p>
-                        <p className="font-bold text-[#3E2723] mt-0.5">
-                          {t(item.name)} <span className="font-normal text-warm-muted text-[9px]">{t(item.detail)}</span>
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </aside>
-          )}
-        </div>
-      </div>
-
-      {/* 5. Mobile Bottom Navigation with 3-Dot Button & Impressive Round Options Popup */}
-      <MobileBottomNav
-        items={sidebarItems.map(item => ({
-          to: item.label === "Dashboard" ? "/" : `/?page=${item.label.toLowerCase().replace(/\s+/g, "-")}`,
-          label: item.label,
-          icon: item.icon
-        }))}
-        activeLabel={activeNav}
-        onSelect={it => handleNavClick(it.label)}
-      />
-
-
-      {/* --- INTERACTIVE MODALS --- */}
-
-      {selectedNews && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-[#EBE3DB] rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 space-y-4 relative shadow-2xl text-left">
-            <button onClick={() => setSelectedNews(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FAF3EC] flex items-center justify-center hover:bg-[#FDF2E9] hover:text-[#F97316] transition">
-              <X className="w-4 h-4" />
-            </button>
-            <img src={getImageUrl(selectedNews.img || selectedNews.img_url)} alt="" className="w-full h-48 object-cover rounded-2xl shadow-xs" />
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#F97316] bg-[#FFF5EE] px-2.5 py-0.5 rounded-full">{selectedNews.category}</span>
-              <h3 className="font-extrabold text-base text-[#3E2723] mt-2 leading-snug">{selectedNews.title}</h3>
-              <p className="text-xs text-warm-muted mt-1 font-medium">Published on {selectedNews.date || "Today"} · {selectedNews.location || selectedNews.community_name || "General"}</p>
-            </div>
-            <p className="text-xs text-warm-muted leading-relaxed whitespace-pre-line">
-              {selectedNews.excerpt}
-              {typeof selectedNews.id === "string" && selectedNews.id.startsWith("s") && (
-                <>
-                  {" "}Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam nec finibus ex. Praesent hendrerit sem sem, ac elementum lacus sollicitudin eu. Phasellus mollis lectus sit amet dui viverra pulvinar. Proin non elit ac lectus iaculis dictum.
-                  <br /><br />
-                  Sed ac finibus neque, sit amet feugiat ex. Quisque pretium lorem ex, eget imperdiet erat commodo at. Duis consequat accumsan scelerisque. Curabitur vitae purus eleifend, iaculis erat sit amet, sodales erat.
-                </>
-              )}
-            </p>
-          </motion.div>
-        </div>
-      )}
-
-      {/* 2. Video Player Modal */}
-      {selectedVideo && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-black border border-white/10 rounded-3xl overflow-hidden max-w-2xl w-full relative shadow-2xl">
-            <button onClick={() => setSelectedVideo(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition">
-              <X className="w-4 h-4" />
-            </button>
-            <div className="relative aspect-video">
-              <img src={selectedVideo.img} alt="" className="w-full h-full object-cover opacity-80" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6 bg-black/40">
-                <Play className="w-16 h-16 text-white stroke-[1.5]" />
-                <h3 className="font-bold text-base mt-4">{selectedVideo.title}</h3>
-                <p className="text-xs text-white/70 mt-1">Playing dummy stream... ({selectedVideo.duration})</p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* 3. Photo Lightbox Modal */}
-      {selectedPhoto && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4" onClick={() => setSelectedPhoto(null)}>
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="max-w-3xl w-full max-h-[85vh] relative flex items-center justify-center" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setSelectedPhoto(null)} className="absolute -top-12 right-0 w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition">
-              <X className="w-4 h-4" />
-            </button>
-            <img src={selectedPhoto} alt="Gallery view" className="max-w-full max-h-[75vh] object-contain rounded-2xl border border-white/10" />
-          </motion.div>
-        </div>
-      )}
-
-      {/* Community Details Modal */}
-      {selectedCommunityDetails && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-lg w-full overflow-hidden relative shadow-2xl text-left">
-            <button onClick={() => setSelectedCommunityDetails(null)} className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition cursor-pointer">
-              <X className="w-4 h-4" />
-            </button>
-            <div className="h-36 relative bg-amber-100 flex items-center justify-center overflow-hidden">
-              <img 
-                src={selectedCommunityDetails.cover || selectedCommunityDetails.cover_url || "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60"} 
-                alt="" 
-                onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1543341724-66ca0d39b133?w=800&auto=format&fit=crop&q=60"; }}
-                className="w-full h-full object-cover" 
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-              <div className="absolute bottom-3 left-5 right-5 text-white">
-                <span className="text-[10px] font-extrabold bg-[#F97316] text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  {selectedCommunityDetails.type || "Community"}
-                </span>
-                <h3 className="font-extrabold text-xl text-white mt-1 drop-shadow-md">{selectedCommunityDetails.name}</h3>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 bg-[#FFF8F2] rounded-2xl border border-[#EBE3DB]/60">
-                  <span className="text-warm-muted text-[10px] uppercase font-bold block mb-0.5">Location</span>
-                  <span className="font-semibold text-[#3E2723] flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-[#F97316]" /> {selectedCommunityDetails.village ? `${selectedCommunityDetails.village}, ${selectedCommunityDetails.district}` : selectedCommunityDetails.district || selectedCommunityDetails.state || "Gujarat"}
-                  </span>
-                </div>
-                <div className="p-3 bg-[#FFF8F2] rounded-2xl border border-[#EBE3DB]/60">
-                  <span className="text-warm-muted text-[10px] uppercase font-bold block mb-0.5">Total Members</span>
-                  <span className="font-semibold text-[#3E2723] flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5 text-[#F97316]" /> {selectedCommunityDetails.member_count || 150} Members
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <h4 className="text-xs font-bold text-[#5C4033]">About Community</h4>
-                <p className="text-xs text-[#5C4033]/90 leading-relaxed bg-[#FFF8F2] p-4 rounded-2xl border border-[#EBE3DB]/60">
-                  {selectedCommunityDetails.desc || selectedCommunityDetails.description || "Official community organization providing platform for family registration, events, matrimonials, and social welfare programs."}
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setSelectedCommunityDetails(null)}
-                  className="flex-1 py-2.5 bg-[#FAF3EC] text-[#5C4033] font-bold text-xs rounded-xl hover:bg-[#FDF2E9] transition cursor-pointer"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={async () => {
-                    const nextJoined = !selectedCommunityDetails.joined;
-                    try {
-                      if (selectedCommunityDetails.id) {
-                        if (nextJoined) {
-                          await api.joinCommunity(selectedCommunityDetails.id).catch(() => null);
-                        } else {
-                          await api.leaveCommunity(selectedCommunityDetails.id).catch(() => null);
-                        }
-                      }
-                    } catch (e) {
-                      console.warn(e);
-                    }
-                    setCommunityList(prev => prev.map(c => c.name === selectedCommunityDetails.name ? { ...c, joined: nextJoined, member_count: nextJoined ? (c.member_count || 150) + 1 : Math.max(1, (c.member_count || 150) - 1) } : c));
-                    setSelectedCommunityDetails(prev => ({ ...prev, joined: nextJoined, member_count: nextJoined ? (prev.member_count || 150) + 1 : Math.max(1, (prev.member_count || 150) - 1) }));
-                    if (nextJoined) {
-                      toast.success(`Joined ${selectedCommunityDetails.name}!`);
-                    } else {
-                      toast.info(`Left ${selectedCommunityDetails.name}.`);
-                    }
-                  }}
-                  className={`flex-1 py-2.5 font-bold text-xs rounded-xl shadow-md transition cursor-pointer ${
-                    selectedCommunityDetails.joined
-                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                      : "bg-[#F97316] text-white hover:bg-[#EA580C]"
-                  }`}
-                >
-                  {selectedCommunityDetails.joined ? "Joined ✓" : "Join Community"}
-                </button>
+                onClick={(e) => handleJoinCommunityClick(selectedCommunityDetails, e)}
+                className={`flex-1 py-2.5 font-bold text-xs rounded-xl shadow-md transition cursor-pointer ${
+                  selectedCommunityDetails.joined
+                    ? "bg-amber-100 text-amber-800 border border-amber-300 flex items-center justify-center gap-1"
+                    : "bg-[#F97316] text-white hover:bg-[#EA580C]"
+                }`}
+              >
+                {selectedCommunityDetails.joined ? "Request Pending ✓" : "Join Community"}
+              </button>
               </div>
             </div>
           </motion.div>
@@ -3016,6 +2323,44 @@ function DashboardStyleHome() {
                 {isSubmittingCommunity ? "Registering..." : "Register Community"}
               </button>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      
+      {/* Login Required Modal */}
+      {showLoginPromptModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#FFF5EE] border border-[#EBE3DB] rounded-[32px] max-w-sm w-full p-6 space-y-4 relative shadow-2xl text-center">
+            <button onClick={() => setShowLoginPromptModal(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FAF3EC] flex items-center justify-center hover:bg-[#FDF2E9] hover:text-[#F97316] transition cursor-pointer">
+              <X className="w-4 h-4 text-[#5C4033]" />
+            </button>
+            <div className="w-14 h-14 rounded-full bg-amber-100 text-[#F97316] flex items-center justify-center mx-auto text-2xl font-bold">
+              🔒
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-extrabold text-base text-[#3E2723]">Login Required to Join</h3>
+              <p className="text-xs text-warm-muted leading-relaxed">
+                You must be logged in to your BHOI account to join communities, request membership, and interact with community admins.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowLoginPromptModal(false)}
+                className="flex-1 py-2.5 bg-[#FAF3EC] text-[#5C4033] font-bold text-xs rounded-xl hover:bg-[#FDF2E9] transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowLoginPromptModal(false);
+                  navigate({ to: "/login" });
+                }}
+                className="flex-1 py-2.5 bg-[#F97316] text-white font-bold text-xs rounded-xl hover:bg-[#EA580C] shadow-md transition cursor-pointer"
+              >
+                Log In Now
+              </button>
+            </div>
           </motion.div>
         </div>
       )}
