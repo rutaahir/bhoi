@@ -17,6 +17,7 @@ import heroBg from "@/assets/hero-bg.png";
 import { toast } from "sonner";
 import { MobileBottomNav, type SidebarItem } from "@/components/wag/Sidebar";
 import { useAuth } from "@/context/AuthContext";
+import { dashHomeFor } from "@/components/wag/Navbar";
 
 type SearchParams = {
   page?: string;
